@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Car, Phone, Mail } from "lucide-react";
+import { Car, Phone, Mail, Menu } from "lucide-react";
+import { Cart } from "@/components/Cart";
 
 export const Header = () => {
   return (
@@ -16,14 +17,20 @@ export const Header = () => {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#home" className="text-foreground hover:text-primary transition-colors">
+            <a href="/" className="text-foreground hover:text-primary transition-colors">
               Trang Chủ
+            </a>
+            <a href="/products" className="text-foreground hover:text-primary transition-colors">
+              Sản Phẩm
             </a>
             <a href="#services" className="text-foreground hover:text-primary transition-colors">
               Dịch Vụ
             </a>
             <a href="#gallery" className="text-foreground hover:text-primary transition-colors">
               Thư Viện
+            </a>
+            <a href="/blog" className="text-foreground hover:text-primary transition-colors">
+              Blog
             </a>
             <a href="#contact" className="text-foreground hover:text-primary transition-colors">
               Liên Hệ
@@ -42,6 +49,7 @@ export const Header = () => {
                 <span className="text-muted-foreground">info@autolux.vn</span>
               </div>
             </div>
+            <Cart />
             <Button variant="luxury" size="sm">
               Tư Vấn Miễn Phí
             </Button>
