@@ -23,6 +23,9 @@ export const Header = () => {
             <a href="/products" className="text-foreground hover:text-primary transition-colors">
               Sản Phẩm
             </a>
+            <a href="/order" className="text-foreground hover:text-primary transition-colors">
+              Đặt Hàng
+            </a>
             <a href="#services" className="text-foreground hover:text-primary transition-colors">
               Dịch Vụ
             </a>
