@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,7 @@ import {
 } from "lucide-react";
 
 const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState("orders");
+  const [activeTab, setActiveTab] = useState("analytics");
 
   // Mock data
   const orders = [
@@ -99,6 +100,44 @@ const AdminPage = () => {
       date: "2024-01-12",
       views: 980
     }
+  ];
+
+  // Analytics data
+  const revenueData = [
+    { month: "T1", revenue: 85000000, orders: 12 },
+    { month: "T2", revenue: 92000000, orders: 15 },
+    { month: "T3", revenue: 78000000, orders: 10 },
+    { month: "T4", revenue: 105000000, orders: 18 },
+    { month: "T5", revenue: 120000000, orders: 22 },
+    { month: "T6", revenue: 98000000, orders: 16 },
+    { month: "T7", revenue: 115000000, orders: 20 },
+    { month: "T8", revenue: 130000000, orders: 25 },
+    { month: "T9", revenue: 142000000, orders: 28 },
+    { month: "T10", revenue: 158000000, orders: 32 },
+    { month: "T11", revenue: 165000000, orders: 35 },
+    { month: "T12", revenue: 180000000, orders: 40 }
+  ];
+
+  const serviceData = [
+    { name: "Bọc ghế da", value: 45, color: "#8884d8" },
+    { name: "Độ nội thất", value: 30, color: "#82ca9d" },
+    { name: "Thay thảm sàn", value: 15, color: "#ffc658" },
+    { name: "Khác", value: 10, color: "#ff7c7c" }
+  ];
+
+  const customerData = [
+    { month: "T1", new: 8, returning: 4 },
+    { month: "T2", new: 12, returning: 3 },
+    { month: "T3", new: 6, returning: 4 },
+    { month: "T4", new: 14, returning: 4 },
+    { month: "T5", new: 16, returning: 6 },
+    { month: "T6", new: 10, returning: 6 },
+    { month: "T7", new: 15, returning: 5 },
+    { month: "T8", new: 18, returning: 7 },
+    { month: "T9", new: 20, returning: 8 },
+    { month: "T10", new: 22, returning: 10 },
+    { month: "T11", new: 25, returning: 10 },
+    { month: "T12", new: 28, returning: 12 }
   ];
 
   const getStatusBadge = (status: string) => {
@@ -198,10 +237,142 @@ const AdminPage = () => {
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
+            <TabsTrigger value="analytics">Thống kê</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
             <TabsTrigger value="posts">Bài viết</TabsTrigger>
             <TabsTrigger value="customers">Khách hàng</TabsTrigger>
           </TabsList>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Thống kê & Báo cáo</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Revenue Chart */}
+              <Card className="col-span-1 lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Doanh thu theo tháng</CardTitle>
+                  <CardDescription>Theo dõi xu hướng doanh thu và số đơn hàng</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={revenueData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis yAxisId="left" />
+                        <YAxis yAxisId="right" orientation="right" />
+                        <Tooltip 
+                          formatter={(value: any, name: string) => [
+                            name === 'revenue' ? `${(value / 1000000).toFixed(0)}M VND` : value,
+                            name === 'revenue' ? 'Doanh thu' : 'Số đơn hàng'
+                          ]}
+                        />
+                        <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={2} />
+                        <Line yAxisId="right" type="monotone" dataKey="orders" stroke="#82ca9d" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Service Distribution */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Phân bố dịch vụ</CardTitle>
+                  <CardDescription>Tỷ lệ các dịch vụ được sử dụng</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={serviceData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {serviceData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Customer Analytics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Khách hàng mới vs Quay lại</CardTitle>
+                  <CardDescription>Phân tích khách hàng theo tháng</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={customerData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="new" stackId="a" fill="#8884d8" name="Khách hàng mới" />
+                        <Bar dataKey="returning" stackId="a" fill="#82ca9d" name="Khách hàng quay lại" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Tỷ lệ chuyển đổi</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">68%</div>
+                  <p className="text-xs text-muted-foreground">+5% từ tháng trước</p>
+                  <div className="mt-2 h-2 bg-muted rounded-full">
+                    <div className="h-2 bg-primary rounded-full" style={{ width: "68%" }}></div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Giá trị đơn hàng TB</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">16.2M VND</div>
+                  <p className="text-xs text-muted-foreground">+2.1M từ tháng trước</p>
+                  <div className="mt-2 h-2 bg-muted rounded-full">
+                    <div className="h-2 bg-green-500 rounded-full" style={{ width: "75%" }}></div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Thời gian hoàn thành TB</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">3.2 ngày</div>
+                  <p className="text-xs text-muted-foreground">-0.5 ngày từ tháng trước</p>
+                  <div className="mt-2 h-2 bg-muted rounded-full">
+                    <div className="h-2 bg-blue-500 rounded-full" style={{ width: "82%" }}></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
