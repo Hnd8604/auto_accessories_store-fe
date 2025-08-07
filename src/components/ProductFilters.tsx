@@ -183,12 +183,35 @@ const FilterContent = ({
             value={priceRange}
             onValueChange={setPriceRange}
             max={50000000}
+            min={0}
             step={500000}
             className="w-full"
           />
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>{formatPrice(priceRange[0])}</span>
             <span>{formatPrice(priceRange[1])}</span>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <div className="flex-1">
+              <label className="text-xs text-muted-foreground">Từ</label>
+              <Input
+                type="number"
+                value={priceRange[0]}
+                onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
+                className="mt-1"
+                placeholder="0"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-muted-foreground">Đến</label>
+              <Input
+                type="number"
+                value={priceRange[1]}
+                onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 50000000])}
+                className="mt-1"
+                placeholder="50,000,000"
+              />
+            </div>
           </div>
         </div>
       </div>

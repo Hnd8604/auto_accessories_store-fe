@@ -47,10 +47,6 @@ export const Header = () => {
                 <Phone className="h-4 w-4 text-primary" />
                 <span className="text-muted-foreground">0123 456 789</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">info@autolux.vn</span>
-              </div>
             </div>
             <a 
               href="/auth" 
