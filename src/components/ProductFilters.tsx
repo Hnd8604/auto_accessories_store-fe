@@ -178,41 +178,33 @@ const FilterContent = ({
       {/* Price Range */}
       <div>
         <h3 className="font-semibold text-foreground mb-4">Khoảng Giá</h3>
-        <div className="space-y-4">
-          <Slider
-            value={priceRange}
-            onValueChange={setPriceRange}
-            max={50000000}
-            min={0}
-            step={500000}
-            className="w-full"
-          />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{formatPrice(priceRange[0])}</span>
-            <span>{formatPrice(priceRange[1])}</span>
-          </div>
-          <div className="flex gap-2 mt-2">
-            <div className="flex-1">
-              <label className="text-xs text-muted-foreground">Từ</label>
-              <Input
-                type="number"
-                value={priceRange[0]}
-                onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
-                className="mt-1"
-                placeholder="0"
+        <div className="space-y-2">
+          {[
+            { label: "Dưới 5 triệu", min: 0, max: 5000000 },
+            { label: "5 - 10 triệu", min: 5000000, max: 10000000 },
+            { label: "10 - 20 triệu", min: 10000000, max: 20000000 },
+            { label: "20 - 30 triệu", min: 20000000, max: 30000000 },
+            { label: "30 - 50 triệu", min: 30000000, max: 50000000 },
+            { label: "Trên 50 triệu", min: 50000000, max: 100000000 }
+          ].map((range) => (
+            <div key={range.label} className="flex items-center space-x-2">
+              <Checkbox 
+                id={range.label}
+                checked={priceRange[0] === range.min && priceRange[1] === range.max}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setPriceRange([range.min, range.max]);
+                  }
+                }}
               />
+              <label 
+                htmlFor={range.label} 
+                className="text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                {range.label}
+              </label>
             </div>
-            <div className="flex-1">
-              <label className="text-xs text-muted-foreground">Đến</label>
-              <Input
-                type="number"
-                value={priceRange[1]}
-                onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 50000000])}
-                className="mt-1"
-                placeholder="50,000,000"
-              />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
