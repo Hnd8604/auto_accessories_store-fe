@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Car, Phone, Mail, Menu } from "lucide-react";
+import { Car, Phone, Mail, Menu, User } from "lucide-react";
 import { Cart } from "@/components/Cart";
 
 export const Header = () => {
@@ -52,6 +52,13 @@ export const Header = () => {
                 <span className="text-muted-foreground">info@autolux.vn</span>
               </div>
             </div>
+            <a 
+              href="/auth" 
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+              title="Đăng nhập / Đăng ký"
+            >
+              <User className="h-5 w-5 text-primary" />
+            </a>
             <Cart />
             <Button variant="luxury" size="sm">
               Tư Vấn Miễn Phí
