@@ -37,9 +37,16 @@ import {
   LogOut,
   Car
 } from "lucide-react";
+import seatsImg from "@/assets/seats.jpg";
+import steeringImg from "@/assets/steering-wheel.jpg";
+import dashboardImg from "@/assets/dashboard.jpg";
+import { useToast } from "@/hooks/use-toast";
+
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState("analytics");
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   // Mock data
   const orders = [
@@ -100,6 +107,14 @@ const AdminPage = () => {
       date: "2024-01-12",
       views: 980
     }
+  ];
+
+  // Products data (UI demo)
+  const productCategories = ["Bọc ghế da", "Thảm sàn", "Ốp taplo", "Bọc vô lăng"];
+  const productsDemo = [
+    { id: "SP001", name: "Bọc ghế da Nappa", category: "Bọc ghế da", price: 15000000, stock: 8, status: "active", image: seatsImg },
+    { id: "SP002", name: "Thảm sàn 5D cao cấp", category: "Thảm sàn", price: 3500000, stock: 20, status: "active", image: dashboardImg },
+    { id: "SP003", name: "Bọc vô lăng da", category: "Bọc vô lăng", price: 800000, stock: 50, status: "inactive", image: steeringImg }
   ];
 
   // Analytics data
@@ -239,6 +254,7 @@ const AdminPage = () => {
           <TabsList>
             <TabsTrigger value="analytics">Thống kê</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
+            <TabsTrigger value="products">Sản phẩm</TabsTrigger>
             <TabsTrigger value="posts">Bài viết</TabsTrigger>
             <TabsTrigger value="customers">Khách hàng</TabsTrigger>
           </TabsList>
@@ -445,6 +461,134 @@ const AdminPage = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Products Tab */}
+          <TabsContent value="products" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Quản lý sản phẩm</h2>
+              <Button onClick={() => setProductDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Thêm sản phẩm
+              </Button>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Danh sách sản phẩm</CardTitle>
+                <CardDescription>Quản lý sản phẩm dịch vụ nội thất ô tô</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sản phẩm</TableHead>
+                      <TableHead>Danh mục</TableHead>
+                      <TableHead>Giá</TableHead>
+                      <TableHead>Tồn kho</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead>Thao tác</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {productsDemo.map((p) => (
+                      <TableRow key={p.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <img src={p.image} alt={`Sản phẩm ${p.name}`} loading="lazy" className="h-12 w-12 rounded-md object-cover" />
+                            <div>
+                              <div className="font-medium">{p.name}</div>
+                              <div className="text-sm text-muted-foreground">{p.id}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{p.category}</TableCell>
+                        <TableCell className="font-medium">{p.price.toLocaleString()} VND</TableCell>
+                        <TableCell>{p.stock}</TableCell>
+                        <TableCell>
+                          {p.status === "active" ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Đang bán</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Ngừng bán</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                              <DropdownMenuItem onClick={() => toast({ title: "Xem sản phẩm", description: "Chế độ demo - chỉ giao diện" })}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Xem chi tiết
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toast({ title: "Chỉnh sửa", description: "Chế độ demo - chỉ giao diện" })}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Chỉnh sửa
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600" onClick={() => toast({ title: "Xóa sản phẩm", description: "Chế độ demo - chưa xóa dữ liệu" })}>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Xóa
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Thêm sản phẩm</DialogTitle>
+                  <DialogDescription>Tạo sản phẩm mới (UI demo, chưa lưu dữ liệu)</DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium">Tên sản phẩm</label>
+                    <Input placeholder="Nhập tên sản phẩm" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Danh mục</label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn danh mục" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {productCategories.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Giá (VND)</label>
+                    <Input type="number" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Tồn kho</label>
+                    <Input type="number" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Hình ảnh (URL)</label>
+                    <Input type="url" placeholder="https://..." />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium">Mô tả</label>
+                    <Textarea placeholder="Mô tả chi tiết..." className="min-h-[120px]" />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setProductDialogOpen(false)}>Hủy</Button>
+                  <Button onClick={() => { toast({ title: "Đã lưu (demo)", description: "Chỉ giao diện, chưa lưu thực tế" }); setProductDialogOpen(false); }}>Lưu sản phẩm</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Posts Tab */}
