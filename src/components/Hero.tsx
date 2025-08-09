@@ -24,14 +24,14 @@ export const Hero = () => {
             </span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
             Nâng Tầm 
             <span className="bg-gradient-accent bg-clip-text text-transparent"> Đẳng Cấp</span>
             <br />
             Nội Thất Xe Hơi
           </h1>
           
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
+          <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl">
             Chúng tôi chuyên thiết kế và độ nội thất ô tô cao cấp với chất liệu da thật, 
             carbon fiber và công nghệ hiện đại. Mang đến trải nghiệm lái xe sang trọng và đẳng cấp.
           </p>
@@ -53,8 +53,8 @@ export const Hero = () => {
                 <Award className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-foreground">5+</div>
-                <div className="text-sm text-muted-foreground">Năm Kinh Nghiệm</div>
+                <div className="text-2xl font-bold text-primary-foreground">5+</div>
+                <div className="text-sm text-primary-foreground/70">Năm Kinh Nghiệm</div>
               </div>
             </div>
             
@@ -63,8 +63,8 @@ export const Hero = () => {
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-foreground">500+</div>
-                <div className="text-sm text-muted-foreground">Khách Hàng Hài Lòng</div>
+                <div className="text-2xl font-bold text-primary-foreground">500+</div>
+                <div className="text-sm text-primary-foreground/70">Khách Hàng Hài Lòng</div>
               </div>
             </div>
             
@@ -73,8 +73,8 @@ export const Hero = () => {
                 <Star className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-foreground">4.9/5</div>
-                <div className="text-sm text-muted-foreground">Đánh Giá Chất Lượng</div>
+                <div className="text-2xl font-bold text-primary-foreground">4.9/5</div>
+                <div className="text-sm text-primary-foreground/70">Đánh Giá Chất Lượng</div>
               </div>
             </div>
           </div>
