@@ -72,7 +72,7 @@ export const HeroSlider = () => {
                     <h1 className="text-4xl md:text-6xl font-extrabold leading-tight text-primary-foreground">
                       {s.title}
                     </h1>
-                    <p className="mt-4 text-lg md:text-xl text-primary-foreground/80">
+                    <p className="mt-4 text-lg md:text-xl text-primary-foreground">
                       {s.desc}
                     </p>
                     <div className="mt-8 flex gap-4">
