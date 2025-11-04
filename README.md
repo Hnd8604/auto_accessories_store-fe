@@ -1,73 +1,37 @@
-# Welcome to your Lovable project
+# Vite React Shadcn TS
 
-## Project info
+A modern React + Vite + TypeScript template bootstrapped with shadcn/ui components and utilities.
 
-**URL**: https://lovable.dev/projects/44d9d719-ce34-4456-8559-1735c3673704
+## API Client
 
-## How can I edit this code?
+This project includes a lightweight typed API client under `src/api` generated from your OpenAPI surface.
 
-There are several ways of editing your application.
+- Configure base URL via `VITE_API_BASE_URL` (defaults to `http://localhost:8080/api`).
+- Tokens are stored in `localStorage` under `access_token` and `refresh_token`.
+- Automatic token refresh on 401 using `/auth/refresh`.
 
-**Use Lovable**
+### Structure
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/44d9d719-ce34-4456-8559-1735c3673704) and start prompting.
+- `src/api/config.ts`: base URL and token keys
+- `src/api/http.ts`: auth-aware HTTP client with refresh queueing
+- `src/api/auth.ts`: login/logout and exported `http` instance
+- `src/api/types.ts`: core request/response types
+- `src/api/endpoints/*`: resource-specific modules
 
-Changes made via Lovable will be committed automatically to this repo.
+### Usage
 
-**Use your preferred IDE**
+```ts
+import { AuthService } from "./src/api/auth";
+import { ProductsApi } from "./src/api/endpoints/products";
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+await AuthService.login({ username: "user", password: "pass" });
+const products = await ProductsApi.getAll({ page: 0, size: 10 });
 ```
 
-**Edit a file directly in GitHub**
+### Env
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create `.env.local`:
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/44d9d719-ce34-4456-8559-1735c3673704) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```
+VITE_API_BASE_URL=http://localhost:8080/api
+```
