@@ -29,6 +29,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
+import { isAdmin } from "@/lib/auth";
+import { useAuth } from "@/lib/auth-context";
 
 const loginSchema = z.object({
   username: z
@@ -61,6 +63,7 @@ const AuthPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login: authLogin } = useAuth();
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -86,15 +89,16 @@ const AuthPage = () => {
   const loginMutation = useMutation({
     mutationFn: AuthService.login,
     onSuccess: (data) => {
+      // Update auth context
+      authLogin(data.user, data.accessToken, data.refreshToken);
+
       toast({
         title: "Đăng nhập thành công!",
         description: "Chào mừng bạn quay trở lại.",
       });
 
       // Check if user has Admin role
-      const hasAdminRole = data.user.roles?.some(
-        (role) => role.name.toLowerCase() === "admin"
-      );
+      const hasAdminRole = isAdmin(data.user);
 
       // Redirect based on role
       if (hasAdminRole) {

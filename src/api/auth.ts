@@ -28,7 +28,7 @@ export const refreshCall = async (
   refreshToken: string
 ): Promise<{ accessToken: string; refreshToken?: string } | null> => {
   try {
-    const res = await fetch(`/auth/refresh`, {
+    const res = await fetch(`/api/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken } satisfies RefreshRequest),

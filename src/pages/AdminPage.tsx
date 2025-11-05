@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/auth-context";
+import { AuthService } from "@/api/auth";
 import {
   LineChart,
   Line,
@@ -80,6 +83,36 @@ import { useToast } from "@/hooks/use-toast";
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleViewWebsite = () => {
+    navigate("/");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+      logout();
+      navigate("/");
+      toast({
+        title: "Đăng xuất thành công",
+        description: "Bạn đã đăng xuất khỏi tài khoản admin.",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still logout locally even if API call fails
+      logout();
+      navigate("/");
+    }
+  };
+
+  const getUserDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user?.username || "Admin";
+  };
 
   // Fetch categories and brands for ProductManagement
   const { data: categoriesData } = useQuery({
@@ -260,28 +293,53 @@ const AdminPage = () => {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Car className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold">AutoLux Admin</h1>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Car className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-bold">AutoLux Admin</h1>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewWebsite}
+              className="hidden md:flex"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Xem trang web
+            </Button>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
                 <Users className="h-4 w-4 mr-2" />
-                Admin
+                {getUserDisplayName()}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
               className="bg-background border shadow-md"
             >
-              <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {getUserDisplayName()}
+                  </p>
+                  {user?.email && (
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  )}
+                  <p className="text-xs leading-none text-muted-foreground">
+                    Role: {user?.role?.name || "Admin"}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleViewWebsite}>
                 <Eye className="h-4 w-4 mr-2" />
                 Xem trang web
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Đăng xuất
               </DropdownMenuItem>

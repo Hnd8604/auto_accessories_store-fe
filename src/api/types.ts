@@ -26,7 +26,7 @@ export interface UserResponse {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
-  roles?: RoleResponse[];
+  role?: RoleResponse;
 }
 
 export interface ProductResponse {
@@ -115,7 +115,7 @@ export interface UserCreationRequest {
 }
 
 export interface UserUpdateRequest extends Partial<UserCreationRequest> {
-  roles?: string[];
+  roleId?: string;
 }
 
 export interface RoleRequest {
