@@ -12,7 +12,7 @@ export const UsersApi = {
   getById: (userId: string) =>
     http.request<ApiResponse<UserResponse>>(`/api/users/${userId}`),
   create: (payload: UserCreationRequest) =>
-    simpleHttp.request<ApiResponse<UserResponse>>("/api/users", {
+    http.request<ApiResponse<UserResponse>>("/api/users", {
       method: "POST",
       body: payload,
     }),

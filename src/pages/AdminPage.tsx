@@ -72,6 +72,7 @@ import {
 } from "lucide-react";
 import { ProductManagement } from "@/components/ProductManagement";
 import { CatalogManagement } from "@/components/CatalogManagement";
+import { UserManagement } from "@/components/UserManagement";
 import { CategoriesApi } from "@/api/endpoints/categories";
 import { BrandsApi } from "@/api/endpoints/brands";
 import { useToast } from "@/hooks/use-toast";
@@ -350,6 +351,7 @@ const AdminPage = () => {
             <TabsTrigger value="products">Sản phẩm</TabsTrigger>
             <TabsTrigger value="catalog">Danh mục & Thương hiệu</TabsTrigger>
             <TabsTrigger value="posts">Bài viết</TabsTrigger>
+            <TabsTrigger value="users">Người dùng</TabsTrigger>
             <TabsTrigger value="customers">Khách hàng</TabsTrigger>
           </TabsList>
 
@@ -746,6 +748,11 @@ const AdminPage = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <UserManagement />
           </TabsContent>
 
           {/* Customers Tab */}

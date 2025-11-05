@@ -17,8 +17,7 @@ const slides = [
   {
     image: hero1,
     title: "Nâng Tầm Đẳng Cấp Nội Thất Xe Hơi",
-    desc:
-      "Thiết kế – độ nội thất cao cấp với da thật, carbon fiber và công nghệ hiện đại.",
+    desc: "Thiết kế – độ nội thất cao cấp với da thật, carbon fiber và công nghệ hiện đại.",
     cta: "Khám Phá Dịch Vụ",
   },
   {
@@ -79,8 +78,56 @@ export const HeroSlider = () => {
                       <Button variant="hero" size="lg" className="hover-scale">
                         {s.cta}
                       </Button>
-                      <Button variant="premium" size="lg">
-                        Tìm Hiểu Thêm
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="
+                          bg-transparent 
+                          border-2 
+                          border-white/30 
+                          text-white 
+                          backdrop-blur-sm
+                          hover:bg-white/10 
+                          hover:border-white/60
+                          hover:shadow-lg
+                          hover:shadow-white/20
+                          transition-all 
+                          duration-300 
+                          font-semibold
+                          px-8
+                          py-3
+                          rounded-lg
+                          group
+                          relative
+                          overflow-hidden
+                          before:absolute
+                          before:inset-0
+                          before:bg-gradient-to-r
+                          before:from-white/0
+                          before:via-white/5
+                          before:to-white/0
+                          before:translate-x-[-100%]
+                          hover:before:translate-x-[100%]
+                          before:transition-transform
+                          before:duration-700
+                        "
+                      >
+                        <span className="relative z-10 flex items-center gap-2">
+                          Tìm Hiểu Thêm
+                          <svg
+                            className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 7l5 5m0 0l-5 5m5-5H6"
+                            />
+                          </svg>
+                        </span>
                       </Button>
                     </div>
                   </div>
