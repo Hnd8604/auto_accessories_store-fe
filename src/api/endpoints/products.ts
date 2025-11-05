@@ -34,9 +34,9 @@ export const ProductsApi = {
     http.request<ApiResponse<ProductResponse[]>>(
       `/api/products/categories/${categoryId}`
     ),
-  byBranch: (branchId: number) =>
+  byBrand: (brandId: number) =>
     http.request<ApiResponse<ProductResponse[]>>(
-      `/api/products/branches/${branchId}`
+      `/api/products/brands/${brandId}`
     ),
 };
 

@@ -35,7 +35,7 @@ export interface ProductResponse {
   description?: string;
   unitPrice: number;
   categoryName?: string;
-  branchName?: string;
+  brandName?: string;
   stockQuantity?: number;
 }
 
@@ -45,7 +45,7 @@ export interface CategoryResponse {
   description?: string;
 }
 
-export interface BranchResponse {
+export interface BrandResponse {
   id: number;
   name: string;
   description?: string;
@@ -83,7 +83,12 @@ export interface OrderDetailResponse {
   quantity: number;
 }
 
-export type OrderStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELED";
+export type OrderStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELED";
 export type PaymentStatus = "UNPAID" | "PAID" | "REFUNDED";
 
 export interface OrderResponse {
@@ -124,7 +129,7 @@ export interface ProductRequest {
   description?: string;
   unitPrice: number;
   categoryId: number;
-  branchId: number;
+  brandId: number;
   stockQuantity?: number;
 }
 
@@ -139,12 +144,14 @@ export interface CategoryRequest {
   description?: string;
 }
 
-export interface BranchRequest {
+export interface BrandRequest {
   name: string;
   description?: string;
 }
 
-export interface CartRequest { userId: string }
+export interface CartRequest {
+  userId: string;
+}
 
 export interface CartItemRequest {
   cartId: number;
@@ -152,7 +159,9 @@ export interface CartItemRequest {
   quantity: number;
 }
 
-export interface CartItemUpdateRequest { quantity: number }
+export interface CartItemUpdateRequest {
+  quantity: number;
+}
 
 export interface OrderCreationRequest {
   userId: string;
@@ -173,6 +182,3 @@ export interface OrderUpdateByAdminRequest {
   paymentStatus?: PaymentStatus;
   orderStatus?: OrderStatus;
 }
-
-
-

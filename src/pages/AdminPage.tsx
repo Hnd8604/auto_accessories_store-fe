@@ -71,23 +71,24 @@ import {
   Car,
 } from "lucide-react";
 import { ProductManagement } from "@/components/ProductManagement";
+import { CatalogManagement } from "@/components/CatalogManagement";
 import { CategoriesApi } from "@/api/endpoints/categories";
-import { BranchesApi } from "@/api/endpoints/branches";
+import { BrandsApi } from "@/api/endpoints/brands";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const { toast } = useToast();
 
-  // Fetch categories and branches for ProductManagement
+  // Fetch categories and brands for ProductManagement
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: CategoriesApi.getAll,
   });
 
-  const { data: branchesData } = useQuery({
-    queryKey: ["branches"],
-    queryFn: BranchesApi.getAll,
+  const { data: brandsData } = useQuery({
+    queryKey: ["brands"],
+    queryFn: BrandsApi.getAll,
   });
 
   const categoryOptions =
@@ -96,10 +97,10 @@ const AdminPage = () => {
       name: cat.name,
     })) || [];
 
-  const branchOptions =
-    branchesData?.result?.map((branch) => ({
-      id: branch.id,
-      name: branch.name,
+  const brandOptions =
+    brandsData?.result?.map((brand) => ({
+      id: brand.id,
+      name: brand.name,
     })) || [];
 
   // Mock data for other sections
@@ -347,6 +348,7 @@ const AdminPage = () => {
             <TabsTrigger value="analytics">Thống kê</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
             <TabsTrigger value="products">Sản phẩm</TabsTrigger>
+            <TabsTrigger value="catalog">Danh mục & Thương hiệu</TabsTrigger>
             <TabsTrigger value="posts">Bài viết</TabsTrigger>
             <TabsTrigger value="customers">Khách hàng</TabsTrigger>
           </TabsList>
@@ -623,8 +625,13 @@ const AdminPage = () => {
           <TabsContent value="products" className="space-y-6">
             <ProductManagement
               categoryOptions={categoryOptions}
-              branchOptions={branchOptions}
+              brandOptions={brandOptions}
             />
+          </TabsContent>
+
+          {/* Catalog Management Tab */}
+          <TabsContent value="catalog" className="space-y-6">
+            <CatalogManagement />
           </TabsContent>
 
           {/* Posts Tab */}

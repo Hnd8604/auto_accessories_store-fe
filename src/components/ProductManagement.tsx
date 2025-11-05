@@ -60,7 +60,7 @@ const productSchema = z.object({
   description: z.string().optional(),
   unitPrice: z.number().min(0, { message: "Giá phải lớn hơn hoặc bằng 0." }),
   categoryId: z.number().min(1, { message: "Vui lòng chọn danh mục." }),
-  branchId: z.number().min(1, { message: "Vui lòng chọn chi nhánh." }),
+  brandId: z.number().min(1, { message: "Vui lòng chọn thương hiệu." }),
   stockQuantity: z
     .number()
     .min(0, { message: "Số lượng tồn kho phải lớn hơn hoặc bằng 0." })
@@ -71,16 +71,20 @@ type ProductFormData = z.infer<typeof productSchema>;
 
 interface ProductManagementProps {
   categoryOptions?: Array<{ id: number; name: string }>;
-  branchOptions?: Array<{ id: number; name: string }>;
+  brandOptions?: Array<{ id: number; name: string }>;
 }
 
 export const ProductManagement = ({
   categoryOptions = [],
-  branchOptions = [],
+  brandOptions = [],
 }: ProductManagementProps) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductResponse | null>(
+    null
+  );
+  const [viewingProduct, setViewingProduct] = useState<ProductResponse | null>(
     null
   );
   const [currentPage, setCurrentPage] = useState(0);
@@ -97,7 +101,7 @@ export const ProductManagement = ({
       description: "",
       unitPrice: 0,
       categoryId: 0,
-      branchId: 0,
+      brandId: 0,
       stockQuantity: 0,
     },
   });
@@ -182,7 +186,7 @@ export const ProductManagement = ({
       description: data.description || "",
       unitPrice: data.unitPrice,
       categoryId: data.categoryId,
-      branchId: data.branchId,
+      brandId: data.brandId,
       stockQuantity: data.stockQuantity || 0,
     };
 
@@ -202,8 +206,7 @@ export const ProductManagement = ({
       unitPrice: product.unitPrice,
       categoryId:
         categoryOptions.find((c) => c.name === product.categoryName)?.id || 0,
-      branchId:
-        branchOptions.find((b) => b.name === product.branchName)?.id || 0,
+      brandId: brandOptions.find((b) => b.name === product.brandName)?.id || 0,
       stockQuantity: product.stockQuantity || 0,
     });
     setIsEditDialogOpen(true);
@@ -214,6 +217,12 @@ export const ProductManagement = ({
     if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
       deleteMutation.mutate(productId);
     }
+  };
+
+  // Handle view detail button click
+  const handleViewDetail = (product: ProductResponse) => {
+    setViewingProduct(product);
+    setIsDetailDialogOpen(true);
   };
 
   // Get products from response
@@ -272,7 +281,7 @@ export const ProductManagement = ({
                 <TableRow>
                   <TableHead>Sản phẩm</TableHead>
                   <TableHead>Danh mục</TableHead>
-                  <TableHead>Chi nhánh</TableHead>
+                  <TableHead>Thương hiệu</TableHead>
                   <TableHead>Giá</TableHead>
                   <TableHead>Tồn kho</TableHead>
                   <TableHead>Thao tác</TableHead>
@@ -296,7 +305,7 @@ export const ProductManagement = ({
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {product.branchName || "N/A"}
+                        {product.brandName || "N/A"}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">
@@ -319,6 +328,12 @@ export const ProductManagement = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleViewDetail(product)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Xem chi tiết
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(product)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Chỉnh sửa
@@ -456,10 +471,10 @@ export const ProductManagement = ({
 
                 <FormField
                   control={form.control}
-                  name="branchId"
+                  name="brandId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Chi nhánh</FormLabel>
+                      <FormLabel>Thương hiệu</FormLabel>
                       <Select
                         value={field.value?.toString() || ""}
                         onValueChange={(value) =>
@@ -468,16 +483,16 @@ export const ProductManagement = ({
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Chọn chi nhánh" />
+                            <SelectValue placeholder="Chọn thương hiệu" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {branchOptions.map((branch) => (
+                          {brandOptions.map((brand) => (
                             <SelectItem
-                              key={branch.id}
-                              value={branch.id.toString()}
+                              key={brand.id}
+                              value={brand.id.toString()}
                             >
-                              {branch.name}
+                              {brand.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -575,6 +590,150 @@ export const ProductManagement = ({
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product Detail Dialog */}
+      <Dialog
+        open={isDetailDialogOpen}
+        onOpenChange={(open) => {
+          setIsDetailDialogOpen(open);
+          if (!open) setViewingProduct(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Chi tiết sản phẩm</DialogTitle>
+            <DialogDescription>
+              Thông tin chi tiết về sản phẩm
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingProduct && (
+            <div className="space-y-6">
+              {/* Product Image */}
+              <div className="flex justify-center">
+                <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <img
+                    src="/placeholder.svg"
+                    alt={viewingProduct.name}
+                    className="w-full h-full object-cover rounded-lg"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder.svg";
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Product Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Tên sản phẩm
+                    </label>
+                    <p className="text-lg font-semibold">
+                      {viewingProduct.name}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Giá
+                    </label>
+                    <p className="text-lg font-semibold text-green-600">
+                      {viewingProduct.unitPrice?.toLocaleString("vi-VN")} VNĐ
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Danh mục
+                    </label>
+                    <p className="text-base">
+                      {viewingProduct.categoryName || "Chưa có danh mục"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Thương hiệu
+                    </label>
+                    <p className="text-base">
+                      {viewingProduct.brandName || "Chưa có thương hiệu"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Số lượng tồn kho
+                    </label>
+                    <p className="text-base">
+                      <Badge
+                        variant={
+                          (viewingProduct.stockQuantity || 0) > 10
+                            ? "default"
+                            : (viewingProduct.stockQuantity || 0) > 0
+                            ? "secondary"
+                            : "destructive"
+                        }
+                      >
+                        {viewingProduct.stockQuantity || 0}
+                      </Badge>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      ID sản phẩm
+                    </label>
+                    <p className="text-base text-gray-600">
+                      #{viewingProduct.id}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Description */}
+              {viewingProduct.description && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Mô tả sản phẩm
+                  </label>
+                  <div className="mt-2 p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
+                    <p className="text-base text-gray-700 whitespace-pre-wrap">
+                      {viewingProduct.description}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsDetailDialogOpen(false);
+                    setViewingProduct(null);
+                  }}
+                >
+                  Đóng
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsDetailDialogOpen(false);
+                    handleEdit(viewingProduct);
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Chỉnh sửa
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
