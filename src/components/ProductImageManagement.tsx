@@ -182,7 +182,7 @@ export const ProductImageManagement = ({
       toast({
         title: "Thành công!",
         description: wasPrimarySet
-          ? "Hình ảnh đã được thêm và đặt làm ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          ? "Hình ảnh đã được thêm và đặt làm ảnh chính."
           : "Hình ảnh đã được thêm thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
@@ -212,7 +212,7 @@ export const ProductImageManagement = ({
       toast({
         title: "Thành công!",
         description: wasPrimarySet
-          ? "Hình ảnh đã được cập nhật và đặt làm ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          ? "Hình ảnh đã được cập nhật và đặt làm ảnh chính."
           : "Hình ảnh đã được cập nhật thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
@@ -256,7 +256,7 @@ export const ProductImageManagement = ({
       toast({
         title: "Thành công!",
         description: hasPrimaryImage
-          ? "Đã đặt làm hình ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          ? "Đã đặt làm hình ảnh chính."
           : "Đã đặt làm hình ảnh chính thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
