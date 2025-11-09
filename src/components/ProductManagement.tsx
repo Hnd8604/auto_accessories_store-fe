@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ProductsApi } from "@/api/endpoints/products";
+import { ProductImagesApi } from "@/api/endpoints/productImages";
 import {
   Card,
   CardContent,
@@ -51,8 +52,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, MoreHorizontal, Eye, Edit, Trash2, Loader2 } from "lucide-react";
+import {
+  Plus,
+  MoreHorizontal,
+  Eye,
+  Edit,
+  Trash2,
+  Loader2,
+  Images,
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { ProductImageManagement } from "@/components/ProductImageManagement";
 import type { ProductRequest, ProductResponse } from "@/api/types";
 
 const productSchema = z.object({
@@ -81,12 +91,15 @@ export const ProductManagement = ({
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isImageManagementOpen, setIsImageManagementOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductResponse | null>(
     null
   );
   const [viewingProduct, setViewingProduct] = useState<ProductResponse | null>(
     null
   );
+  const [managingImagesProduct, setManagingImagesProduct] =
+    useState<ProductResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
 
@@ -114,6 +127,32 @@ export const ProductManagement = ({
   } = useQuery({
     queryKey: ["products", currentPage, pageSize],
     queryFn: () => ProductsApi.getAll({ page: currentPage, size: pageSize }),
+  });
+
+  // Query: Get product images for products (to show primary images)
+  const { data: productImagesMap } = useQuery({
+    queryKey: ["productImagesMap", productsData?.result?.content],
+    queryFn: async () => {
+      const products = productsData?.result?.content || [];
+      const imagesMap: Record<number, string> = {};
+
+      await Promise.all(
+        products.map(async (product) => {
+          try {
+            const response = await ProductImagesApi.getByProductId(product.id);
+            const primaryImage = response.result?.find((img) => img.isPrimary);
+            if (primaryImage) {
+              imagesMap[product.id] = primaryImage.imageUrl;
+            }
+          } catch (error) {
+            // Ignore errors for individual products
+          }
+        })
+      );
+
+      return imagesMap;
+    },
+    enabled: !!productsData?.result?.content?.length,
   });
 
   // Mutation: Create product
@@ -225,6 +264,12 @@ export const ProductManagement = ({
     setIsDetailDialogOpen(true);
   };
 
+  // Handle manage images button click
+  const handleManageImages = (product: ProductResponse) => {
+    setManagingImagesProduct(product);
+    setIsImageManagementOpen(true);
+  };
+
   // Get products from response
   const products = productsData?.result?.content || [];
   const totalPages = productsData?.result?.totalPages || 0;
@@ -279,6 +324,7 @@ export const ProductManagement = ({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Hình ảnh</TableHead>
                   <TableHead>Sản phẩm</TableHead>
                   <TableHead>Danh mục</TableHead>
                   <TableHead>Thương hiệu</TableHead>
@@ -290,6 +336,21 @@ export const ProductManagement = ({
               <TableBody>
                 {products.map((product) => (
                   <TableRow key={product.id}>
+                    <TableCell>
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        <img
+                          src={
+                            productImagesMap?.[product.id] || "/placeholder.svg"
+                          }
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.svg";
+                          }}
+                        />
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{product.name}</div>
@@ -334,6 +395,12 @@ export const ProductManagement = ({
                             <Eye className="h-4 w-4 mr-2" />
                             Xem chi tiết
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleManageImages(product)}
+                          >
+                            <Images className="h-4 w-4 mr-2" />
+                            Quản lý hình ảnh
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(product)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Chỉnh sửa
@@ -353,7 +420,7 @@ export const ProductManagement = ({
                 {products.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center py-8 text-muted-foreground"
                     >
                       Chưa có sản phẩm nào. Hãy thêm sản phẩm đầu tiên!
@@ -615,7 +682,10 @@ export const ProductManagement = ({
               <div className="flex justify-center">
                 <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center">
                   <img
-                    src="/placeholder.svg"
+                    src={
+                      productImagesMap?.[viewingProduct.id] ||
+                      "/placeholder.svg"
+                    }
                     alt={viewingProduct.name}
                     className="w-full h-full object-cover rounded-lg"
                     onError={(e) => {
@@ -723,6 +793,16 @@ export const ProductManagement = ({
                   Đóng
                 </Button>
                 <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsDetailDialogOpen(false);
+                    handleManageImages(viewingProduct);
+                  }}
+                >
+                  <Images className="w-4 h-4 mr-2" />
+                  Quản lý hình ảnh
+                </Button>
+                <Button
                   onClick={() => {
                     setIsDetailDialogOpen(false);
                     handleEdit(viewingProduct);
@@ -736,6 +816,23 @@ export const ProductManagement = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Product Image Management */}
+      {managingImagesProduct && (
+        <ProductImageManagement
+          productId={managingImagesProduct.id}
+          productName={managingImagesProduct.name}
+          isOpen={isImageManagementOpen}
+          onOpenChange={(open) => {
+            setIsImageManagementOpen(open);
+            if (!open) {
+              setManagingImagesProduct(null);
+              // Refetch product images to update the table
+              queryClient.invalidateQueries({ queryKey: ["productImagesMap"] });
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
