@@ -63,12 +63,12 @@ const imageSchema = z.object({
 type ImageFormData = z.infer<typeof imageSchema>;
 
 // Image Preview Component
-const ImagePreview = ({ 
-  imageUrl, 
-  isLoading, 
-  onLoadStart, 
-  onLoadEnd, 
-  onError 
+const ImagePreview = ({
+  imageUrl,
+  isLoading,
+  onLoadStart,
+  onLoadEnd,
+  onError,
 }: {
   imageUrl: string;
   isLoading: boolean;
@@ -147,7 +147,7 @@ export const ProductImageManagement = ({
 
   // Watch imageUrl changes for preview
   const watchedImageUrl = form.watch("imageUrl");
-  
+
   useEffect(() => {
     if (watchedImageUrl && watchedImageUrl !== previewImageUrl) {
       setIsPreviewLoading(true);
@@ -177,10 +177,13 @@ export const ProductImageManagement = ({
   // Mutation: Create image
   const createMutation = useMutation({
     mutationFn: ProductImagesApi.create,
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
+      const wasPrimarySet = variables.isPrimary && hasPrimaryImage;
       toast({
         title: "Thành công!",
-        description: "Hình ảnh đã được thêm thành công.",
+        description: wasPrimarySet
+          ? "Hình ảnh đã được thêm và đặt làm ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          : "Hình ảnh đã được thêm thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
       setIsAddDialogOpen(false);
@@ -204,10 +207,13 @@ export const ProductImageManagement = ({
       id: number;
       data: ProductImageUpdateRequest;
     }) => ProductImagesApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
+      const wasPrimarySet = variables.data.isPrimary && hasPrimaryImage;
       toast({
         title: "Thành công!",
-        description: "Hình ảnh đã được cập nhật thành công.",
+        description: wasPrimarySet
+          ? "Hình ảnh đã được cập nhật và đặt làm ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          : "Hình ảnh đã được cập nhật thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
       setIsEditDialogOpen(false);
@@ -249,7 +255,9 @@ export const ProductImageManagement = ({
     onSuccess: () => {
       toast({
         title: "Thành công!",
-        description: "Đã đặt làm hình ảnh chính thành công.",
+        description: hasPrimaryImage
+          ? "Đã đặt làm hình ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          : "Đã đặt làm hình ảnh chính thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
     },
@@ -264,7 +272,29 @@ export const ProductImageManagement = ({
   });
 
   // Handle form submission
-  const onSubmit = (data: ImageFormData) => {
+  const onSubmit = async (data: ImageFormData) => {
+    // If setting as primary, we need to unset other primary images first
+    if (data.isPrimary) {
+      const currentImages = imagesData?.result || [];
+      const otherPrimaryImages = currentImages.filter(
+        (img) => img.isPrimary && img.id !== editingImage?.id
+      );
+
+      // Unset other primary images first
+      for (const img of otherPrimaryImages) {
+        try {
+          await ProductImagesApi.update(img.id, {
+            imageUrl: img.imageUrl,
+            altText: img.altText || "",
+            isPrimary: false,
+            sortOrder: img.sortOrder,
+          });
+        } catch (error) {
+          console.error("Error unsetting primary image:", error);
+        }
+      }
+    }
+
     if (editingImage) {
       const updateRequest: ProductImageUpdateRequest = {
         imageUrl: data.imageUrl,
@@ -306,7 +336,38 @@ export const ProductImageManagement = ({
   };
 
   // Handle set primary
-  const handleSetPrimary = (imageId: number) => {
+  const handleSetPrimary = async (imageId: number) => {
+    // Show confirmation if there's already a primary image
+    if (hasPrimaryImage) {
+      const confirmed = confirm(
+        `Đặt ảnh này làm ảnh chính?\n\nẢnh chính hiện tại "${
+          currentPrimaryImage?.altText || "không có mô tả"
+        }" sẽ trở thành ảnh phụ.`
+      );
+      if (!confirmed) return;
+    }
+
+    // Unset other primary images first
+    const currentImages = imagesData?.result || [];
+    const otherPrimaryImages = currentImages.filter(
+      (img) => img.isPrimary && img.id !== imageId
+    );
+
+    // Unset other primary images
+    for (const img of otherPrimaryImages) {
+      try {
+        await ProductImagesApi.update(img.id, {
+          imageUrl: img.imageUrl,
+          altText: img.altText || "",
+          isPrimary: false,
+          sortOrder: img.sortOrder,
+        });
+      } catch (error) {
+        console.error("Error unsetting primary image:", error);
+      }
+    }
+
+    // Then set the new primary image
     setPrimaryMutation.mutate({ imageId });
   };
 
@@ -326,6 +387,14 @@ export const ProductImageManagement = ({
   };
 
   const images = imagesData?.result || [];
+
+  // Check if there's already a primary image
+  const hasPrimaryImage = images.some(
+    (img) => img.isPrimary && img.id !== editingImage?.id
+  );
+  const currentPrimaryImage = images.find(
+    (img) => img.isPrimary && img.id !== editingImage?.id
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -502,7 +571,9 @@ export const ProductImageManagement = ({
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = "none";
-                            target.nextElementSibling?.classList.remove("hidden");
+                            target.nextElementSibling?.classList.remove(
+                              "hidden"
+                            );
                           }}
                           onLoad={(e) => {
                             const target = e.target as HTMLImageElement;
@@ -569,7 +640,11 @@ export const ProductImageManagement = ({
                           Hình ảnh chính
                         </FormLabel>
                         <p className="text-sm text-muted-foreground">
-                          Đặt làm hình ảnh chính của sản phẩm
+                          {hasPrimaryImage
+                            ? `Đặt làm hình ảnh chính. Ảnh "${
+                                currentPrimaryImage?.altText || "hiện tại"
+                              }" sẽ trở thành ảnh phụ.`
+                            : "Đặt làm hình ảnh chính của sản phẩm."}
                         </p>
                       </div>
                       <FormControl>
@@ -654,7 +729,9 @@ export const ProductImageManagement = ({
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = "none";
-                            target.nextElementSibling?.classList.remove("hidden");
+                            target.nextElementSibling?.classList.remove(
+                              "hidden"
+                            );
                           }}
                           onLoad={(e) => {
                             const target = e.target as HTMLImageElement;
@@ -721,7 +798,11 @@ export const ProductImageManagement = ({
                           Hình ảnh chính
                         </FormLabel>
                         <p className="text-sm text-muted-foreground">
-                          Đặt làm hình ảnh chính của sản phẩm
+                          {hasPrimaryImage
+                            ? `Đặt làm hình ảnh chính. Ảnh "${
+                                currentPrimaryImage?.altText || "hiện tại"
+                              }" sẽ trở thành ảnh phụ.`
+                            : "Đặt làm hình ảnh chính của sản phẩm."}
                         </p>
                       </div>
                       <FormControl>
