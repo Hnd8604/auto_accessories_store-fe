@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ProductImagesApi } from "@/api/endpoints/productImages";
 import {
@@ -62,6 +62,53 @@ const imageSchema = z.object({
 
 type ImageFormData = z.infer<typeof imageSchema>;
 
+// Image Preview Component
+const ImagePreview = ({ 
+  imageUrl, 
+  isLoading, 
+  onLoadStart, 
+  onLoadEnd, 
+  onError 
+}: {
+  imageUrl: string;
+  isLoading: boolean;
+  onLoadStart: () => void;
+  onLoadEnd: () => void;
+  onError: () => void;
+}) => (
+  <div className="space-y-2">
+    <label className="text-sm font-medium">Preview</label>
+    <div className="w-full max-w-xs mx-auto">
+      <div className="aspect-square rounded-lg border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 relative">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+          </div>
+        )}
+        <img
+          src={imageUrl}
+          alt="Preview"
+          className="w-full h-full object-cover"
+          onLoadStart={onLoadStart}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            onError();
+            target.style.display = "none";
+            target.nextElementSibling?.classList.remove("hidden");
+          }}
+          onLoad={onLoadEnd}
+        />
+        <div className="hidden w-full h-full flex items-center justify-center text-gray-500">
+          <div className="text-center">
+            <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">URL không hợp lệ</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 interface ProductImageManagementProps {
   productId: number;
   productName?: string;
@@ -80,6 +127,8 @@ export const ProductImageManagement = ({
   const [editingImage, setEditingImage] = useState<ProductImageResponse | null>(
     null
   );
+  const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
+  const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
@@ -95,6 +144,24 @@ export const ProductImageManagement = ({
       sortOrder: 0,
     },
   });
+
+  // Watch imageUrl changes for preview
+  const watchedImageUrl = form.watch("imageUrl");
+  
+  useEffect(() => {
+    if (watchedImageUrl && watchedImageUrl !== previewImageUrl) {
+      setIsPreviewLoading(true);
+      setPreviewImageUrl(watchedImageUrl);
+    }
+  }, [watchedImageUrl]);
+
+  // Reset preview when dialog closes
+  useEffect(() => {
+    if (!isAddDialogOpen && !isEditDialogOpen) {
+      setPreviewImageUrl("");
+      setIsPreviewLoading(false);
+    }
+  }, [isAddDialogOpen, isEditDialogOpen]);
 
   // Query: Get product images
   const {
@@ -227,6 +294,7 @@ export const ProductImageManagement = ({
       isPrimary: image.isPrimary,
       sortOrder: image.sortOrder,
     });
+    setPreviewImageUrl(image.imageUrl);
     setIsEditDialogOpen(true);
   };
 
@@ -391,7 +459,7 @@ export const ProductImageManagement = ({
             if (!open) form.reset();
           }}
         >
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Thêm hình ảnh mới</DialogTitle>
               <DialogDescription>
@@ -420,6 +488,38 @@ export const ProductImageManagement = ({
                     </FormItem>
                   )}
                 />
+
+                {/* Image Preview */}
+                {previewImageUrl && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Preview</label>
+                    <div className="w-full max-w-xs mx-auto">
+                      <div className="aspect-square rounded-lg border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                        <img
+                          src={previewImageUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            target.nextElementSibling?.classList.remove("hidden");
+                          }}
+                          onLoad={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "block";
+                            target.nextElementSibling?.classList.add("hidden");
+                          }}
+                        />
+                        <div className="hidden w-full h-full flex items-center justify-center text-gray-500">
+                          <div className="text-center">
+                            <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">URL không hợp lệ</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}
@@ -513,7 +613,7 @@ export const ProductImageManagement = ({
             }
           }}
         >
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Chỉnh sửa hình ảnh</DialogTitle>
               <DialogDescription>Cập nhật thông tin hình ảnh</DialogDescription>
@@ -540,6 +640,38 @@ export const ProductImageManagement = ({
                     </FormItem>
                   )}
                 />
+
+                {/* Image Preview */}
+                {previewImageUrl && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Preview</label>
+                    <div className="w-full max-w-xs mx-auto">
+                      <div className="aspect-square rounded-lg border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                        <img
+                          src={previewImageUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            target.nextElementSibling?.classList.remove("hidden");
+                          }}
+                          onLoad={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "block";
+                            target.nextElementSibling?.classList.add("hidden");
+                          }}
+                        />
+                        <div className="hidden w-full h-full flex items-center justify-center text-gray-500">
+                          <div className="text-center">
+                            <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">URL không hợp lệ</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}
