@@ -184,8 +184,24 @@ export const ProductImageManagement = ({
 
   // Mutation: Create image
   const createMutation = useMutation({
-    mutationFn: ({ file, isPrimary }: { file: File; isPrimary: boolean }) =>
-      ProductImagesApi.create(file, productId, isPrimary),
+    mutationFn: ({
+      file,
+      isPrimary,
+      altText,
+      sortOrder,
+    }: {
+      file: File;
+      isPrimary: boolean;
+      altText?: string;
+      sortOrder?: number;
+    }) =>
+      ProductImagesApi.createWithMetadata(
+        file,
+        productId,
+        isPrimary,
+        altText,
+        sortOrder
+      ),
     onSuccess: (response, variables) => {
       const wasPrimarySet = variables.isPrimary && hasPrimaryImage;
       toast({
@@ -283,6 +299,8 @@ export const ProductImageManagement = ({
 
   // Handle form submission
   const onSubmit = async (data: ImageFormData) => {
+    console.log("Form data before submit:", data); // Debug log
+
     if (!editingImage && !selectedFile) {
       toast({
         variant: "destructive",
@@ -323,7 +341,12 @@ export const ProductImageManagement = ({
       };
       updateMutation.mutate({ id: editingImage.id, data: updateRequest });
     } else if (selectedFile) {
-      createMutation.mutate({ file: selectedFile, isPrimary: data.isPrimary });
+      createMutation.mutate({
+        file: selectedFile,
+        isPrimary: data.isPrimary,
+        altText: data.altText,
+        sortOrder: data.sortOrder,
+      });
     }
   };
 
@@ -399,10 +422,11 @@ export const ProductImageManagement = ({
       }
 
       setSelectedFile(file);
+      const currentImages = imagesData?.result || [];
       form.reset({
         altText: "",
         isPrimary: false,
-        sortOrder: images.length, // Auto set sort order
+        sortOrder: currentImages.length, // Auto set sort order
       });
       setIsAddDialogOpen(true);
     }
