@@ -55,7 +55,9 @@ export interface ProductImageResponse {
   id: number;
   productId: number;
   imageUrl: string;
-  description?: string;
+  altText?: string;
+  isPrimary: boolean;
+  sortOrder: number;
 }
 
 export interface CartItemResponse {
@@ -136,7 +138,16 @@ export interface ProductRequest {
 export interface ProductImageRequest {
   productId: number;
   imageUrl: string;
-  description?: string;
+  altText?: string;
+  isPrimary: boolean;
+  sortOrder: number;
+}
+
+export interface ProductImageUpdateRequest {
+  imageUrl: string;
+  altText?: string;
+  isPrimary: boolean;
+  sortOrder: number;
 }
 
 export interface CategoryRequest {

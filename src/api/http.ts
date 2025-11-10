@@ -1,6 +1,14 @@
-import { API_BASE_URL, ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, type HttpHeaders, type RequestOptions } from "./config";
+import {
+  API_BASE_URL,
+  ACCESS_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+  type HttpHeaders,
+  type RequestOptions,
+} from "./config";
 
-type RefreshFunction = (refreshToken: string) => Promise<{ accessToken: string; refreshToken?: string } | null>;
+type RefreshFunction = (
+  refreshToken: string
+) => Promise<{ accessToken: string; refreshToken?: string } | null>;
 
 class AuthHttpClient {
   private isRefreshing: boolean = false;
@@ -12,11 +20,15 @@ class AuthHttpClient {
   }
 
   private getAccessToken(): string | null {
-    return typeof window !== "undefined" ? localStorage.getItem(ACCESS_TOKEN_KEY) : null;
+    return typeof window !== "undefined"
+      ? localStorage.getItem(ACCESS_TOKEN_KEY)
+      : null;
   }
 
   private getRefreshToken(): string | null {
-    return typeof window !== "undefined" ? localStorage.getItem(REFRESH_TOKEN_KEY) : null;
+    return typeof window !== "undefined"
+      ? localStorage.getItem(REFRESH_TOKEN_KEY)
+      : null;
   }
 
   private setTokens(accessToken: string, refreshToken?: string) {
@@ -38,7 +50,9 @@ class AuthHttpClient {
     if (currentToken) return currentToken;
 
     if (this.isRefreshing) {
-      return new Promise<string | null>((resolve) => this.pendingQueue.push(resolve));
+      return new Promise<string | null>((resolve) =>
+        this.pendingQueue.push(resolve)
+      );
     }
 
     this.isRefreshing = true;
@@ -68,8 +82,16 @@ class AuthHttpClient {
     this.pendingQueue = [];
   }
 
-  async request<T = any>(path: string, options: RequestOptions = {}): Promise<T> {
-    const headers: HttpHeaders = { "Content-Type": "application/json", ...(options.headers || {}) };
+  async request<T = any>(
+    path: string,
+    options: RequestOptions = {}
+  ): Promise<T> {
+    const headers: HttpHeaders = { ...(options.headers || {}) };
+
+    // Don't set Content-Type for FormData, let browser handle it
+    if (!(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
 
     let token = this.getAccessToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -78,7 +100,12 @@ class AuthHttpClient {
       return fetch(`${API_BASE_URL}${path}`, {
         method: options.method || "GET",
         headers,
-        body: options.body ? JSON.stringify(options.body) : undefined,
+        body:
+          options.body instanceof FormData
+            ? options.body
+            : options.body
+            ? JSON.stringify(options.body)
+            : undefined,
         signal: options.signal,
       });
     };
@@ -108,6 +135,3 @@ class AuthHttpClient {
 }
 
 export default AuthHttpClient;
-
-
-
