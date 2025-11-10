@@ -8,23 +8,37 @@ import type {
 
 export const ProductImagesApi = {
   getAll: () =>
-    http.request<ApiResponse<ProductImageResponse[]>>("/product-images"),
+    http.request<ApiResponse<ProductImageResponse[]>>("/api/product-images"),
   getById: (id: number) =>
-    http.request<ApiResponse<ProductImageResponse>>(`/product-images/${id}`),
+    http.request<ApiResponse<ProductImageResponse>>(
+      `/api/product-images/${id}`
+    ),
   getByProductId: (productId: number) =>
     http.request<ApiResponse<ProductImageResponse[]>>(
       `/api/product-images/products/${productId}`
     ),
-  create: (payload: ProductImageRequest) =>
-    http.request<ApiResponse<ProductImageResponse>>("/api/product-images", {
-      method: "POST",
-      body: payload,
-    }),
+  create: (file: File, productId: number, isPrimary: boolean = false) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("productId", productId.toString());
+    formData.append("isPrimary", isPrimary.toString());
+
+    return http.request<ApiResponse<ProductImageResponse>>(
+      `/api/product-images`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+  },
   update: (id: number, payload: ProductImageUpdateRequest) =>
-    http.request<ApiResponse<ProductImageResponse>>(`/api/product-images/${id}`, {
-      method: "PUT",
-      body: payload,
-    }),
+    http.request<ApiResponse<ProductImageResponse>>(
+      `/api/product-images/${id}`,
+      {
+        method: "PUT",
+        body: payload,
+      }
+    ),
   delete: (id: number) =>
     http.request<ApiResponse<void>>(`/api/product-images/${id}`, {
       method: "DELETE",

@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import {
+  Plus,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -47,6 +48,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type {
+  ProductImageRequest,
   ProductImageResponse,
   ProductImageUpdateRequest,
 } from "@/api/types";
@@ -98,7 +100,7 @@ const ImagePreview = ({
         <div className="hidden w-full h-full flex items-center justify-center text-gray-500">
           <div className="text-center">
             <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Không thể tải ảnh</p>
+            <p className="text-sm">URL không hợp lệ</p>
           </div>
         </div>
       </div>
@@ -169,9 +171,7 @@ export const ProductImageManagement = ({
       setIsPreviewLoading(false);
       setSelectedFile(null);
     }
-  }, [isAddDialogOpen, isEditDialogOpen]);
-
-  // Query: Get product images
+  }, [isAddDialogOpen, isEditDialogOpen]);  // Query: Get product images
   const {
     data: imagesData,
     isLoading,
@@ -184,19 +184,18 @@ export const ProductImageManagement = ({
 
   // Mutation: Create image
   const createMutation = useMutation({
-    mutationFn: ({ file, isPrimary }: { file: File; isPrimary: boolean }) =>
+    mutationFn: ({ file, isPrimary }: { file: File; isPrimary: boolean }) => 
       ProductImagesApi.create(file, productId, isPrimary),
     onSuccess: (response, variables) => {
       const wasPrimarySet = variables.isPrimary && hasPrimaryImage;
       toast({
         title: "Thành công!",
         description: wasPrimarySet
-          ? "Hình ảnh đã được thêm và đặt làm ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          ? "Hình ảnh đã được thêm và đặt làm ảnh chính."
           : "Hình ảnh đã được thêm thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
       setIsAddDialogOpen(false);
-      setSelectedFile(null);
       form.reset();
     },
     onError: (error: any) => {
@@ -222,7 +221,7 @@ export const ProductImageManagement = ({
       toast({
         title: "Thành công!",
         description: wasPrimarySet
-          ? "Hình ảnh đã được cập nhật và đặt làm ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          ? "Hình ảnh đã được cập nhật và đặt làm ảnh chính."
           : "Hình ảnh đã được cập nhật thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
@@ -266,7 +265,7 @@ export const ProductImageManagement = ({
       toast({
         title: "Thành công!",
         description: hasPrimaryImage
-          ? "Đã đặt làm hình ảnh chính. Ảnh chính trước đó đã trở thành ảnh phụ."
+          ? "Đã đặt làm hình ảnh chính."
           : "Đã đặt làm hình ảnh chính thành công.",
       });
       queryClient.invalidateQueries({ queryKey: ["productImages", productId] });
@@ -350,6 +349,16 @@ export const ProductImageManagement = ({
 
   // Handle set primary
   const handleSetPrimary = async (imageId: number) => {
+    // Show confirmation if there's already a primary image
+    if (hasPrimaryImage) {
+      const confirmed = confirm(
+        `Đặt ảnh này làm ảnh chính?\n\nẢnh chính hiện tại "${
+          currentPrimaryImage?.altText || "không có mô tả"
+        }" sẽ trở thành ảnh phụ.`
+      );
+      if (!confirmed) return;
+    }
+
     // Unset other primary images first
     const currentImages = imagesData?.result || [];
     const otherPrimaryImages = currentImages.filter(
@@ -379,7 +388,7 @@ export const ProductImageManagement = ({
     const file = event.target.files?.[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith("image/")) {
+      if (!file.type.startsWith('image/')) {
         toast({
           variant: "destructive",
           title: "Lỗi",
@@ -442,7 +451,9 @@ export const ProductImageManagement = ({
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <Button onClick={() => fileInputRef.current?.click()}>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <Upload className="h-4 w-4 mr-2" />
                 Chọn hình ảnh
               </Button>
@@ -540,10 +551,7 @@ export const ProductImageManagement = ({
           open={isAddDialogOpen}
           onOpenChange={(open) => {
             setIsAddDialogOpen(open);
-            if (!open) {
-              setSelectedFile(null);
-              form.reset();
-            }
+            if (!open) form.reset();
           }}
         >
           <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
@@ -559,35 +567,55 @@ export const ProductImageManagement = ({
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
-                {/* Selected File Info */}
-                {selectedFile && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      File được chọn
-                    </label>
-                    <div className="p-3 border rounded-lg bg-gray-50">
-                      <div className="flex items-center gap-2">
-                        <Upload className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">
-                          {selectedFile.name}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL hình ảnh</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/image.jpg"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Image Preview */}
                 {previewImageUrl && (
-                  <ImagePreview
-                    imageUrl={previewImageUrl}
-                    isLoading={isPreviewLoading}
-                    onLoadStart={() => setIsPreviewLoading(true)}
-                    onLoadEnd={() => setIsPreviewLoading(false)}
-                    onError={() => setIsPreviewLoading(false)}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Preview</label>
+                    <div className="w-full max-w-xs mx-auto">
+                      <div className="aspect-square rounded-lg border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                        <img
+                          src={previewImageUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            target.nextElementSibling?.classList.remove(
+                              "hidden"
+                            );
+                          }}
+                          onLoad={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "block";
+                            target.nextElementSibling?.classList.add("hidden");
+                          }}
+                        />
+                        <div className="hidden w-full h-full flex items-center justify-center text-gray-500">
+                          <div className="text-center">
+                            <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">URL không hợp lệ</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 <FormField
@@ -659,18 +687,11 @@ export const ProductImageManagement = ({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      setIsAddDialogOpen(false);
-                      setSelectedFile(null);
-                      form.reset();
-                    }}
+                    onClick={() => setIsAddDialogOpen(false)}
                   >
                     Hủy
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={createMutation.isPending || !selectedFile}
-                  >
+                  <Button type="submit" disabled={createMutation.isPending}>
                     {createMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
@@ -704,15 +725,55 @@ export const ProductImageManagement = ({
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL hình ảnh</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/image.jpg"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {/* Image Preview */}
                 {previewImageUrl && (
-                  <ImagePreview
-                    imageUrl={previewImageUrl}
-                    isLoading={isPreviewLoading}
-                    onLoadStart={() => setIsPreviewLoading(true)}
-                    onLoadEnd={() => setIsPreviewLoading(false)}
-                    onError={() => setIsPreviewLoading(false)}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Preview</label>
+                    <div className="w-full max-w-xs mx-auto">
+                      <div className="aspect-square rounded-lg border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                        <img
+                          src={previewImageUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            target.nextElementSibling?.classList.remove(
+                              "hidden"
+                            );
+                          }}
+                          onLoad={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "block";
+                            target.nextElementSibling?.classList.add("hidden");
+                          }}
+                        />
+                        <div className="hidden w-full h-full flex items-center justify-center text-gray-500">
+                          <div className="text-center">
+                            <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">URL không hợp lệ</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 <FormField
