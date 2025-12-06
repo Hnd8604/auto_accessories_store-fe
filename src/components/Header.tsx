@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Car, Phone, Mail, Menu, User, LogOut, Settings } from "lucide-react";
-import { Cart } from "@/components/Cart";
-import { useAuth } from "@/lib/auth-context";
-import { isAdmin } from "@/lib/auth";
-import { AuthService } from "@/api/auth";
+import { Cart } from "@/features/cart/components/Cart";
+import { useAuth } from "@/context/auth-context";
+import { isAdmin } from "@/features/auth/hooks/useAuth";
+import { AuthService } from "@/features/auth/api/auth";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,

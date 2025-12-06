@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth-context";
-import { AuthService } from "@/api/auth";
+import { useAuth } from "@/context/auth-context";
+import { AuthService } from "@/features/auth/api/auth";
 import {
   LineChart,
   Line,
@@ -73,11 +73,11 @@ import {
   LogOut,
   Car,
 } from "lucide-react";
-import { ProductManagement } from "@/components/ProductManagement";
-import { CatalogManagement } from "@/components/CatalogManagement";
-import { UserManagement } from "@/components/UserManagement";
-import { CategoriesApi } from "@/api/endpoints/categories";
-import { BrandsApi } from "@/api/endpoints/brands";
+import { ProductManagement } from "@/features/products/components/ProductManagement";
+import { CatalogManagement } from "@/features/products/components/CatalogManagement";
+import { UserManagement } from "@/features/users/components/UserManagement";
+import { CategoriesApi } from "@/features/categories/api/categories";
+import { BrandsApi } from "@/features/brands/api/brands";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminPage = () => {
