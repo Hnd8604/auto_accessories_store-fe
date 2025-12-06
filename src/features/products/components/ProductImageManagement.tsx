@@ -42,14 +42,14 @@ import {
   Star,
   Image as ImageIcon,
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type {
   ProductImageResponse,
   ProductImageUpdateRequest,
-} from "@/types/api";
+} from "@/types";
 
 const imageSchema = z.object({
   altText: z.string().optional(),

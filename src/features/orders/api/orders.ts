@@ -5,7 +5,7 @@ import type {
   OrderResponse,
   OrderUpdateByAdminRequest,
   OrderUpdateByUserRequest,
-} from "@/types/api";
+} from "@/types";
 
 export const OrdersApi = {
   getAll: () => http.request<ApiResponse<OrderResponse[]>>("/orders"),

@@ -1,22 +1,24 @@
 import { http } from "@/features/auth/api/auth";
-import type { ApiResponse, BrandRequest, BrandResponse } from "@/types/api";
+import type { ApiResponse, BrandRequest, BrandResponse } from "@/types";
 
 export const BrandsApi = {
-  getAll: () => http.request<ApiResponse<BrandResponse[]>>("/api/brands"),
-  getById: (id: string) =>
-    http.request<ApiResponse<BrandResponse>>(`/api/brands/${id}`),
+  getAll: () => http.request<ApiResponse<BrandResponse[]>>("/brands"),
+  getById: (id: number) =>
+    http.request<ApiResponse<BrandResponse>>(`/brands/id/${id}`),
+  getBySlug: (slug: string) =>
+    http.request<ApiResponse<BrandResponse>>(`/brands/slug/${slug}`),
   create: (payload: BrandRequest) =>
-    http.request<ApiResponse<BrandResponse>>("/api/brands", {
+    http.request<ApiResponse<BrandResponse>>("/brands", {
       method: "POST",
       body: payload,
     }),
   update: (id: number, payload: BrandRequest) =>
-    http.request<ApiResponse<BrandResponse>>(`/api/brands/${id}`, {
+    http.request<ApiResponse<BrandResponse>>(`/brands/${id}`, {
       method: "PUT",
       body: payload,
     }),
   delete: (id: number) =>
-    http.request<ApiResponse<void>>(`/api/brands/${id}`, {
+    http.request<ApiResponse<void>>(`/brands/${id}`, {
       method: "DELETE",
     }),
 };

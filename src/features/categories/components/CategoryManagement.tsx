@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { CategoriesApi } from "@/features/categories/api/categories";
 import { useToast } from "@/hooks/use-toast";
-import type { CategoryResponse, CategoryRequest } from "@/types/api";
+import type { CategoryResponse, CategoryRequest } from "@/types";
 
 import {
   Card,

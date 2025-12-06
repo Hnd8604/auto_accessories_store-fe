@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { UserResponse } from "@/types/api";
+import { UserResponse } from "@/types";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/config";
 
 interface AuthContextType {
@@ -34,18 +34,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isAuthenticated = !!user;
 
   useEffect(() => {
-    // Check if user is already logged in (has tokens)
-    const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    // Restore user session on page refresh
+    const restoreSession = async () => {
+      const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
 
-    if (accessToken && refreshToken) {
-      // TODO: Validate token and get user info
-      // For now, we'll assume user is logged in if tokens exist
-      // In a real app, you should validate the token with the server
+      if (accessToken && refreshToken) {
+        try {
+          // Fetch user info to restore session
+          const { UsersApi } = await import("@/features/users/api/users");
+          const response = await UsersApi.getMyInfo();
+          const userData = (response as any).result ?? response;
+          setUser(userData);
+        } catch (error) {
+          console.error("Failed to restore session:", error);
+          // Clear invalid tokens
+          localStorage.removeItem(ACCESS_TOKEN_KEY);
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+        }
+      }
       setIsLoading(false);
-    } else {
-      setIsLoading(false);
-    }
+    };
+
+    restoreSession();
   }, []);
 
   const login = (

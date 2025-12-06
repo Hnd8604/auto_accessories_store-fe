@@ -28,7 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { isAdmin } from "@/features/auth/hooks/useAuth";
 import { useAuth } from "@/context/auth-context";
 
@@ -89,7 +89,7 @@ const AuthPage = () => {
   const loginMutation = useMutation({
     mutationFn: AuthService.login,
     onSuccess: (data) => {
-      // Update auth context
+      // Update auth context with complete user data (including roles)
       authLogin(data.user, data.accessToken, data.refreshToken);
 
       toast({

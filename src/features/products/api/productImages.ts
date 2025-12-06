@@ -4,34 +4,34 @@ import type {
   ProductImageRequest,
   ProductImageResponse,
   ProductImageUpdateRequest,
-} from "@/types/api";
+  PageResponse,
+  PaginationParams,
+} from "@/types";
 
 export const ProductImagesApi = {
-  getAll: () =>
-    http.request<ApiResponse<ProductImageResponse[]>>("/api/product-images"),
+  getAll: (params?: PaginationParams) =>
+    http.request<ApiResponse<PageResponse<ProductImageResponse>>>(
+      `/product-images${buildQuery(params)}`
+    ),
   getById: (id: number) =>
     http.request<ApiResponse<ProductImageResponse>>(
-      `/api/product-images/${id}`
+      `/product-images/${id}`
     ),
   getByProductId: (productId: number) =>
     http.request<ApiResponse<ProductImageResponse[]>>(
-      `/api/product-images/products/${productId}`
+      `/product-images/products/${productId}`
     ),
   // Create product image - only supports file, productId, isPrimary
   create: (file: File, productId: number, isPrimary: boolean = false) => {
     const formData = new FormData();
     formData.append("file", file);
 
-    // productId and isPrimary are query parameters according to API docs
-    const url = new URL(`/api/product-images`, "http://localhost");
-    url.searchParams.append("productId", productId.toString());
-    url.searchParams.append("isPrimary", isPrimary.toString());
-
-    console.log("API create - URL:", url.pathname + url.search);
-    console.log("API create - FormData file:", file.name);
+    const params = new URLSearchParams();
+    params.append("productId", productId.toString());
+    params.append("isPrimary", isPrimary.toString());
 
     return http.request<ApiResponse<ProductImageResponse>>(
-      url.pathname + url.search,
+      `/product-images?${params.toString()}`,
       {
         method: "POST",
         body: formData,
@@ -47,14 +47,6 @@ export const ProductImagesApi = {
     altText?: string,
     sortOrder?: number
   ) => {
-    console.log("Creating with metadata:", {
-      file: file.name,
-      productId,
-      isPrimary,
-      altText,
-      sortOrder,
-    });
-
     // First upload file with basic info
     const createResponse = await ProductImagesApi.create(
       file,
@@ -71,7 +63,6 @@ export const ProductImagesApi = {
         sortOrder: sortOrder !== undefined ? sortOrder : 0,
       };
 
-      console.log("Updating with metadata:", updateData);
       return await ProductImagesApi.update(
         createResponse.result.id,
         updateData
@@ -82,19 +73,30 @@ export const ProductImagesApi = {
   },
   update: (id: number, payload: ProductImageUpdateRequest) =>
     http.request<ApiResponse<ProductImageResponse>>(
-      `/api/product-images/${id}`,
+      `/product-images/${id}`,
       {
         method: "PUT",
         body: payload,
       }
     ),
   delete: (id: number) =>
-    http.request<ApiResponse<void>>(`/api/product-images/${id}`, {
+    http.request<ApiResponse<void>>(`/product-images/${id}`, {
       method: "DELETE",
     }),
   setPrimary: (productId: number, imageId: number) =>
     http.request<ApiResponse<void>>(
-      `/api/product-images/products/${productId}/images/${imageId}/set-primary`,
+      `/product-images/products/${productId}/images/${imageId}/set-primary`,
       { method: "POST" }
     ),
 };
+
+function buildQuery(params?: Record<string, any>): string {
+  if (!params) return "";
+  const usp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === "") return;
+    usp.append(k, String(v));
+  });
+  const qs = usp.toString();
+  return qs ? `?${qs}` : "";
+}

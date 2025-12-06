@@ -7,9 +7,7 @@ import type {
   CartItemUpdateRequest,
   CartRequest,
   CartResponse,
-} from "@/types/api";
-
-export interface CartCreationResponse { userId: string }
+} from "@/types";
 
 export const CartsApi = {
   create: (payload: CartRequest) => http.request<ApiResponse<CartCreationResponse>>("/carts", { method: "POST", body: payload }),

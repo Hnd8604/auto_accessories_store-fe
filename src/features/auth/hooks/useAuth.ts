@@ -1,4 +1,4 @@
-import { UserResponse } from "@/types/api";
+import { UserResponse } from "@/types";
 
 export const ROLES = {
   ADMIN: "ADMIN",
@@ -14,8 +14,8 @@ export const hasRole = (
   user: UserResponse | null | undefined,
   roleName: string
 ): boolean => {
-  if (!user?.role?.name) return false;
-  return user.role.name.toUpperCase() === roleName.toUpperCase();
+  if (!user?.roles || user.roles.length === 0) return false;
+  return user.roles.some(role => role.name?.toUpperCase() === roleName.toUpperCase());
 };
 
 /**
@@ -33,10 +33,19 @@ export const isUser = (user: UserResponse | null | undefined): boolean => {
 };
 
 /**
- * Get user role name
+ * Get user role names
+ */
+export const getUserRoles = (
+  user: UserResponse | null | undefined
+): string[] => {
+  return user?.roles?.map(role => role.name).filter(Boolean) || [];
+};
+
+/**
+ * Get user primary role name (first role)
  */
 export const getUserRole = (
   user: UserResponse | null | undefined
 ): string | null => {
-  return user?.role?.name || null;
+  return user?.roles?.[0]?.name || null;
 };

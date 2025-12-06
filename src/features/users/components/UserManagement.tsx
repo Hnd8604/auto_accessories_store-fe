@@ -11,7 +11,8 @@ import type {
   UserCreationRequest,
   UserUpdateRequest,
   RoleResponse,
-} from "@/types/api";
+  PaginationParams,
+} from "@/types";
 
 import {
   Card,
@@ -51,6 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -81,8 +83,7 @@ const userCreateSchema = z.object({
     .refine((val) => val === "" || z.string().email().safeParse(val).success, {
       message: "Email không hợp lệ",
     }),
-  firstName: z.string().optional().or(z.literal("")),
-  lastName: z.string().optional().or(z.literal("")),
+  fullName: z.string().optional().or(z.literal("")),
   phoneNumber: z.string().optional().or(z.literal("")),
 });
 
@@ -93,11 +94,10 @@ const userUpdateSchema = z.object({
     .refine((val) => val === "" || z.string().email().safeParse(val).success, {
       message: "Email không hợp lệ",
     }),
-  firstName: z.string().optional().or(z.literal("")),
-  lastName: z.string().optional().or(z.literal("")),
+  fullName: z.string().optional().or(z.literal("")),
   phoneNumber: z.string().optional().or(z.literal("")),
   password: z.string().optional().or(z.literal("")),
-  roleId: z.string().optional().or(z.literal("")),
+  roles: z.array(z.string()).optional(),
 });
 
 type UserCreateFormData = z.infer<typeof userCreateSchema>;
@@ -126,8 +126,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       username: "",
       password: "",
       email: "",
-      firstName: "",
-      lastName: "",
+      fullName: "",
       phoneNumber: "",
     },
   });
@@ -137,11 +136,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     defaultValues: {
       username: "",
       email: "",
-      firstName: "",
-      lastName: "",
+      fullName: "",
       phoneNumber: "",
       password: "",
-      roleId: "none",
+      roles: [],
     },
   });
 
@@ -152,7 +150,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     error,
   } = useQuery({
     queryKey: ["users"],
-    queryFn: UsersApi.getAll,
+    queryFn: () => UsersApi.getAll({ page: 0, size: 100 }),
   });
 
   // Query: Get all roles
@@ -267,43 +265,31 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       username: data.username,
       password: data.password,
       email: data.email || undefined,
-      firstName: data.firstName || undefined,
-      lastName: data.lastName || undefined,
+      fullName: data.fullName || undefined,
       phoneNumber: data.phoneNumber || undefined,
     };
 
-    console.log("Creating user:", userRequest);
     createMutation.mutate(userRequest);
   };
 
   const onUpdateSubmit = (data: UserUpdateFormData) => {
     if (!editingUser) return;
 
-    console.log("=== UPDATE SUBMIT DEBUG ===");
-    console.log("Form data received:", data);
-    console.log("Editing user:", editingUser);
-
     const userRequest: UserUpdateRequest = {
       username: data.username,
       email: data.email || undefined,
-      firstName: data.firstName || undefined,
-      lastName: data.lastName || undefined,
+      fullName: data.fullName || undefined,
       phoneNumber: data.phoneNumber || undefined,
     };
 
     // Only include password if it's provided
     if (data.password && data.password.trim() !== "") {
       userRequest.password = data.password;
-      console.log("Password will be updated");
     }
 
-    // Only update role if provided and not "none"
-    if (data.roleId && data.roleId.trim() !== "" && data.roleId !== "none") {
-      userRequest.roleId = data.roleId;
-      console.log("Role will be updated to:", data.roleId);
-    } else if (data.roleId === "none") {
-      console.log("Role will be cleared (set to none)");
-      // You might want to handle clearing role here if backend supports it
+    // Update roles if provided
+    if (data.roles && data.roles.length > 0) {
+      userRequest.roles = data.roles;
     }
 
     // Remove any undefined values
@@ -322,24 +308,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
   // Handle actions
   const handleEdit = (user: UserResponse) => {
-    console.log("=== EDIT USER DEBUG ===");
-    console.log("Editing user:", user);
-    console.log("User role:", user.role);
-    console.log("User role ID:", user.role?.id);
-
     setEditingUser(user);
     const resetData = {
       username: user.username,
       email: user.email || "",
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
+      fullName: user.fullName || "",
       phoneNumber: user.phoneNumber || "",
       password: "", // Don't pre-fill password
-      roleId: user.role?.id?.toString() || "none",
+      roles: user.roles?.map(r => r.name) || [],
     };
-    console.log("Reset form data:", resetData);
-    console.log("=== END DEBUG ===");
-
     updateForm.reset(resetData);
     setIsEditDialogOpen(true);
   };
@@ -356,44 +333,36 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   };
 
   // Get users and roles from response
-  const users = usersData?.result || [];
+  const usersPage = usersData?.result;
+  const users = Array.isArray(usersPage) ? usersPage : (usersPage?.content || []);
   const roles = rolesData?.result || [];
-
-  // Debug log to check data structure
-  console.log("Users data:", users);
-  console.log("Roles data:", roles);
-  if (users.length > 0) {
-    console.log("First user:", users[0]);
-    console.log("First user role:", users[0].role);
-  }
 
   // Helper function to get user display name
   const getUserDisplayName = (user: UserResponse) => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
-    }
-    return user.username;
+    return user.fullName || user.username;
   };
 
   // Helper function to get role badge
   const getRoleBadge = (user: UserResponse) => {
-    if (!user.role) {
+    if (!user.roles || user.roles.length === 0) {
       return <Badge variant="secondary">Chưa có vai trò</Badge>;
     }
 
-    const roleName = user.role.name?.toUpperCase() || "";
-    const displayName = user.role.name || "Unknown";
-
-    // Check for admin role (handle different formats)
-    const isAdminRole =
-      roleName === "ADMIN" ||
-      roleName === "ROLE_ADMIN" ||
-      roleName.includes("ADMIN");
-
     return (
-      <Badge variant={isAdminRole ? "destructive" : "default"} className="mr-1">
-        {displayName}
-      </Badge>
+      <>
+        {user.roles.map((role, idx) => {
+          const isAdminRole = role.name?.toUpperCase() === "ADMIN";
+          return (
+            <Badge
+              key={idx}
+              variant={isAdminRole ? "destructive" : "default"}
+              className="mr-1"
+            >
+              {role.name}
+            </Badge>
+          );
+        })}
+      </>
     );
   };
   if (error) {
@@ -566,26 +535,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
                 <FormField
                   control={createForm.control}
-                  name="firstName"
+                  name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Họ</FormLabel>
+                      <FormLabel>Họ và tên</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nhập họ..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={createForm.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tên</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nhập tên..." {...field} />
+                        <Input placeholder="Nhập họ và tên..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -658,11 +613,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             updateForm.reset({
               username: "",
               email: "",
-              firstName: "",
-              lastName: "",
+              fullName: "",
               phoneNumber: "",
               password: "",
-              roleId: "none",
+              roles: [],
             });
           }
         }}
@@ -712,26 +666,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
                 <FormField
                   control={updateForm.control}
-                  name="firstName"
+                  name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Họ</FormLabel>
+                      <FormLabel>Họ và tên</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nhập họ..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={updateForm.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tên</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nhập tên..." {...field} />
+                        <Input placeholder="Nhập họ và tên..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -775,41 +715,54 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               <div className="space-y-4">
                 <FormField
                   control={updateForm.control}
-                  name="roleId"
+                  name="roles"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Vai trò</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Chọn vai trò" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">
-                              Không chọn vai trò
-                            </SelectItem>
-                            {rolesLoading ? (
-                              <SelectItem value="loading" disabled>
-                                Đang tải vai trò...
-                              </SelectItem>
-                            ) : (
-                              roles.map((role) => (
-                                <SelectItem
-                                  key={role.id}
-                                  value={role.id.toString()}
-                                >
-                                  {role.name}
-                                  {role.description && ` - ${role.description}`}
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
+                      <div className="space-y-2 border rounded-md p-4 max-h-60 overflow-y-auto">
+                        {rolesLoading ? (
+                          <div className="text-sm text-muted-foreground">
+                            Đang tải vai trò...
+                          </div>
+                        ) : roles.length === 0 ? (
+                          <div className="text-sm text-muted-foreground">
+                            Không có vai trò nào
+                          </div>
+                        ) : (
+                          roles.map((role: RoleResponse) => (
+                            <div
+                              key={role.name}
+                              className="flex items-start space-x-3 p-2 hover:bg-accent rounded-md"
+                            >
+                              <Checkbox
+                                checked={field.value?.includes(role.name) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentRoles = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...currentRoles, role.name]);
+                                  } else {
+                                    field.onChange(
+                                      currentRoles.filter((r) => r !== role.name)
+                                    );
+                                  }
+                                }}
+                                id={`role-${role.name}`}
+                              />
+                              <label
+                                htmlFor={`role-${role.name}`}
+                                className="flex-1 cursor-pointer"
+                              >
+                                <div className="font-medium text-sm">{role.name}</div>
+                                {role.description && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {role.description}
+                                  </div>
+                                )}
+                              </label>
+                            </div>
+                          ))
+                        )}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -826,11 +779,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                     updateForm.reset({
                       username: "",
                       email: "",
-                      firstName: "",
-                      lastName: "",
+                      fullName: "",
                       phoneNumber: "",
                       password: "",
-                      roleId: "none",
+                      roles: [],
                     });
                   }}
                 >
@@ -903,10 +855,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
                   <div>
                     <label className="text-sm font-medium text-gray-500">
-                      Họ
+                      Họ và tên
                     </label>
                     <p className="text-base">
-                      {viewingUser.firstName || "Chưa có"}
+                      {viewingUser.fullName || "Chưa có"}
                     </p>
                   </div>
                 </div>
@@ -923,15 +875,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
                   <div>
                     <label className="text-sm font-medium text-gray-500">
-                      Tên
-                    </label>
-                    <p className="text-base">
-                      {viewingUser.lastName || "Chưa có"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
                       Số điện thoại
                     </label>
                     <p className="text-base">
@@ -942,46 +885,48 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               </div>
 
               {/* Role & Permissions */}
-              {viewingUser.role && (
+              {viewingUser.roles && viewingUser.roles.length > 0 && (
                 <div>
                   <label className="text-sm font-medium text-gray-500">
                     Vai trò và quyền hạn
                   </label>
                   <div className="mt-2 space-y-2">
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Shield className="w-4 h-4" />
-                        <span className="font-medium">
-                          {viewingUser.role.name || "Unknown"}
-                        </span>
-                      </div>
-                      {viewingUser.role.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {viewingUser.role.description}
-                        </p>
-                      )}
-                      {viewingUser.role.permissions &&
-                        viewingUser.role.permissions.length > 0 && (
-                          <div className="mt-2">
-                            <p className="text-xs text-muted-foreground mb-1">
-                              Quyền hạn:
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {viewingUser.role.permissions.map(
-                                (permission) => (
-                                  <Badge
-                                    key={permission.id}
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {permission.name}
-                                  </Badge>
-                                )
-                              )}
-                            </div>
-                          </div>
+                    {viewingUser.roles.map((role, idx) => (
+                      <div key={idx} className="p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="w-4 h-4" />
+                          <span className="font-medium">
+                            {role.name || "Unknown"}
+                          </span>
+                        </div>
+                        {role.description && (
+                          <p className="text-sm text-muted-foreground">
+                            {role.description}
+                          </p>
                         )}
-                    </div>
+                        {role.permissions &&
+                          role.permissions.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Quyền hạn:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {role.permissions.map(
+                                  (permission, permIdx) => (
+                                    <Badge
+                                      key={permIdx}
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {permission.name}
+                                    </Badge>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

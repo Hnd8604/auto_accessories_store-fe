@@ -35,3 +35,44 @@ Create `.env.local`:
 ```
 VITE_API_BASE_URL=http://localhost:8080/api
 ```
+
+## 📂 Project Structure
+
+```
+src/
+├── components/
+│   ├── ui/              # Primitive components from shadcn/ui
+│   ├── shared/          # Reusable business components
+│   └── *.tsx            # Landing page components
+├── features/            # Feature modules
+├── pages/              # Page components
+├── types/              # TypeScript types
+├── services/           # HTTP clients
+└── ...
+```
+
+## 📚 Documentation
+
+### Architecture
+- **[COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md)** - 📐 Visual diagram & architecture overview
+- **[UI_VS_SHARED.md](./UI_VS_SHARED.md)** - 🔍 Chi tiết sự khác biệt `ui/` vs `shared/`
+- **[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)** - 📁 Cấu trúc dự án chi tiết
+- **[INDEX_PATTERN.md](./INDEX_PATTERN.md)** - 📦 Giải thích pattern `index.ts` (Barrel Exports)
+
+### Development Guides
+- **[SHARED_COMPONENTS.md](./SHARED_COMPONENTS.md)** - 🎯 Hướng dẫn sử dụng shared components
+- **[REFACTORING_PLAN.md](./REFACTORING_PLAN.md)** - 🚀 Kế hoạch tối ưu components
+
+## 🤔 Common Questions
+
+**Q: Tại sao có 2 folder `ui/` và `shared/`?**
+→ Đọc [UI_VS_SHARED.md](./UI_VS_SHARED.md)
+
+**Q: Component mới nên đặt ở đâu?**
+→ Đọc [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md)
+
+**Q: Làm sao tái sử dụng code CRUD?**
+→ Đọc [SHARED_COMPONENTS.md](./SHARED_COMPONENTS.md)
+
+**Q: Tại sao mọi folder đều có `index.ts`?**
+→ Đọc [INDEX_PATTERN.md](./INDEX_PATTERN.md)
