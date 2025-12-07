@@ -1,5 +1,6 @@
 import { http } from "@/features/auth/api/auth";
-import type { ApiResponse, RoleRequest, RoleResponse } from "@/types";
+import type { ApiResponse } from "@/types";
+import type { RoleRequest, RoleResponse } from "../types";
 
 export const RolesApi = {
   getAll: () => http.request<ApiResponse<RoleResponse[]>>("/roles"),

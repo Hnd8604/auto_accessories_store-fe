@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { BrandsApi } from "@/features/brands/api/brands";
 import { useToast } from "@/hooks/use-toast";
-import type { BrandResponse, BrandRequest } from "@/types";
+import type { BrandResponse, BrandRequest } from "@/features/products/types";
 import { CRUDManagement } from "@/components/shared";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";

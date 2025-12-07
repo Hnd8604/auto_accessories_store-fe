@@ -1,5 +1,6 @@
 import { http } from "@/features/auth/api/auth";
-import type { ApiResponse, CategoryRequest, CategoryResponse } from "@/types";
+import type { ApiResponse } from "@/types";
+import type { CategoryRequest, CategoryResponse } from "@/features/products/types";
 
 export const CategoriesApi = {
   getAll: () =>

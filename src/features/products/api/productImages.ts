@@ -1,12 +1,10 @@
 import { http } from "@/features/auth/api/auth";
 import type {
   ApiResponse,
-  ProductImageRequest,
-  ProductImageResponse,
-  ProductImageUpdateRequest,
   PageResponse,
   PaginationParams,
 } from "@/types";
+import type { ProductImageRequest, ProductImageResponse, ProductImageUpdateRequest } from "../types";
 
 export const ProductImagesApi = {
   getAll: (params?: PaginationParams) =>

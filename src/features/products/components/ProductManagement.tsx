@@ -63,7 +63,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductImageManagement } from "@/features/products/components/ProductImageManagement";
-import type { ProductRequest, ProductResponse } from "@/types";
+import type { ProductRequest, ProductResponse } from "../types";
 
 const productSchema = z.object({
   name: z.string().min(1, { message: "Tên sản phẩm không được để trống." }),

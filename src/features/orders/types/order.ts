@@ -1,22 +1,7 @@
-// Order Status Types
-export type OrderStatus =
-  | "PENDING"
-  | "PROCESSING"
-  | "SHIPPED"
-  | "DELIVERED"
-  | "CANCELED";
-
-export type PaymentStatus = "UNPAID" | "PAID" | "REFUNDED";
+import type { OrderStatus, PaymentStatus } from './order-status';
+import type { OrderDetailResponse, OrderDetailRequest } from './order-detail';
 
 // Order Response Types
-export interface OrderDetailResponse {
-  id: string;
-  orderId: string;
-  productId: string;
-  unitPrice: number;
-  quantity: number;
-}
-
 export interface OrderResponse {
   id: string;
   userId: string;
@@ -31,11 +16,6 @@ export interface OrderResponse {
 }
 
 // Order Request Types
-export interface OrderDetailRequest {
-  productId: number;
-  quantity: number;
-}
-
 export interface OrderCreationRequest {
   userId: string;
   nameRecipient?: string;
@@ -53,6 +33,11 @@ export interface OrderUpdateByUserRequest {
 }
 
 export interface OrderUpdateByAdminRequest {
+  paymentStatus?: PaymentStatus;
+  orderStatus?: OrderStatus;
+}
+
+export interface OrderUpdateStatusRequest {
   paymentStatus?: PaymentStatus;
   orderStatus?: OrderStatus;
 }

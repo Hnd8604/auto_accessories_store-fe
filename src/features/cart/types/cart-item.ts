@@ -1,4 +1,4 @@
-// Cart Response Types
+// Cart Item Response Types
 export interface CartItemResponse {
   id: number;
   cartId: number;
@@ -9,22 +9,7 @@ export interface CartItemResponse {
   totalPrice: number;
 }
 
-export interface CartResponse {
-  totalPrice: number;
-  totalItems: number;
-  userId: string;
-  items?: CartItemResponse[];
-}
-
-export interface CartCreationResponse {
-  userId: string;
-}
-
-// Cart Request Types
-export interface CartRequest {
-  userId: string;
-}
-
+// Cart Item Request Types
 export interface CartItemRequest {
   cartId: number;
   productId: number;

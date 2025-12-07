@@ -1,5 +1,6 @@
 import { http } from "@/features/auth/api/auth";
-import type { ApiResponse, PermissionResponse, PermissionRequest } from "@/types";
+import type { ApiResponse } from "@/types";
+import type { PermissionResponse, PermissionRequest } from "../types";
 
 export const PermissionsApi = {
   getAll: () => http.request<ApiResponse<PermissionResponse[]>>("/permissions"),

@@ -1,4 +1,4 @@
-import AuthHttpClient from "@/services/http";
+import AuthHttpClient from "@/services/axios";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, API_BASE_URL } from "@/constants/config";
 import { UsersApi } from "@/features/users/api/users";
 import type {
@@ -8,7 +8,7 @@ import type {
   AuthenticationResponse,
   RefreshRequest,
   RefreshResponse,
-} from "@/types";
+} from "@/features/users/types";
 
 export const refreshCall = async (
   refreshToken: string

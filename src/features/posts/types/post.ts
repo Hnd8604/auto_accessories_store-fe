@@ -15,16 +15,6 @@ export interface PostResponse {
   authorName?: string;
 }
 
-export interface PostCategoryResponse {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  postCount?: number;
-}
-
 // Post Request Types
 export interface PostRequest {
   title: string;
@@ -33,9 +23,4 @@ export interface PostRequest {
   content: string;
   published: boolean;
   categoryId: number;
-}
-
-export interface PostCategoryRequest {
-  name: string;
-  description?: string;
 }

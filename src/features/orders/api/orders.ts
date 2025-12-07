@@ -1,11 +1,12 @@
 import { http } from "@/features/auth/api/auth";
+import type { ApiResponse } from "@/types";
 import type {
-  ApiResponse,
   OrderCreationRequest,
   OrderResponse,
-  OrderUpdateByAdminRequest,
   OrderUpdateByUserRequest,
-} from "@/types";
+  OrderUpdateStatusRequest,
+  OrderUpdateByAdminRequest,
+} from "../types";
 
 export const OrdersApi = {
   getAll: () => http.request<ApiResponse<OrderResponse[]>>("/orders"),

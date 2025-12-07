@@ -1,5 +1,6 @@
 import { http } from "@/features/auth/api/auth";
-import type { ApiResponse, ProductRequest, ProductResponse, PageResponse, PaginationParams, ProductSearchRequest } from "@/types";
+import type { ApiResponse, PageResponse, PaginationParams } from "@/types";
+import type { ProductRequest, ProductResponse, ProductSearchRequest } from "../types";
 
 export const ProductsApi = {
   getAll: (params?: PaginationParams) =>

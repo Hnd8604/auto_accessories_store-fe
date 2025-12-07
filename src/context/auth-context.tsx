@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { UserResponse } from "@/types";
+import { UserResponse } from "@/features/users/types";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/config";
 
 interface AuthContextType {

@@ -1,13 +1,15 @@
 import { http } from "@/features/auth/api/auth";
-import { simpleHttp } from "@/services/httpClient";
+import { simpleHttp } from "@/services/axios";
 import type {
   ApiResponse,
-  UserResponse,
-  UserCreationRequest,
-  UserUpdateRequest,
   PageResponse,
   PaginationParams,
 } from "@/types";
+import type {
+  UserResponse,
+  UserCreationRequest,
+  UserUpdateRequest,
+} from "../types";
 
 export const UsersApi = {
   getAll: (params?: PaginationParams) => http.request<ApiResponse<PageResponse<UserResponse>>>(`/users${buildQuery(params)}`),

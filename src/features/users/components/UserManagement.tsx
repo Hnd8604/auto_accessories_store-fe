@@ -6,13 +6,13 @@ import * as z from "zod";
 import { UsersApi } from "@/features/users/api/users";
 import { RolesApi } from "@/features/users/api/roles";
 import { useToast } from "@/hooks/use-toast";
+import type { PaginationParams } from "@/types";
 import type {
   UserResponse,
   UserCreationRequest,
   UserUpdateRequest,
   RoleResponse,
-  PaginationParams,
-} from "@/types";
+} from "../types";
 
 import {
   Card,

@@ -1,5 +1,6 @@
 import { http } from "@/features/auth/api/auth";
-import type { ApiResponse, BrandRequest, BrandResponse } from "@/types";
+import type { ApiResponse } from "@/types";
+import type { BrandRequest, BrandResponse } from "@/features/products/types";
 
 export const BrandsApi = {
   getAll: () => http.request<ApiResponse<BrandResponse[]>>("/brands"),

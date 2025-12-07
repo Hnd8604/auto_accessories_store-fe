@@ -1,3 +1,2 @@
 // Services exports
-export * from './http';
-export * from './httpClient';
+export * from './axios';

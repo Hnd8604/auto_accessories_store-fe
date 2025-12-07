@@ -1,4 +1,4 @@
-import { UserResponse } from "@/types";
+import { UserResponse } from "../../users/types";
 
 export const ROLES = {
   ADMIN: "ADMIN",

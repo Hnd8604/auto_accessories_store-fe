@@ -1,13 +1,13 @@
 import { http } from "@/features/auth/api/auth";
+import type { ApiResponse } from "@/types";
 import type {
-  ApiResponse,
-  CartCreationResponse,
-  CartItemRequest,
-  CartItemResponse,
-  CartItemUpdateRequest,
   CartRequest,
   CartResponse,
-} from "@/types";
+  CartCreationResponse,
+  CartItemRequest,
+  CartItemUpdateRequest,
+  CartItemResponse,
+} from "../types";
 
 export const CartsApi = {
   create: (payload: CartRequest) => http.request<ApiResponse<CartCreationResponse>>("/carts", { method: "POST", body: payload }),
