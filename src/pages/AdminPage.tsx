@@ -26,32 +26,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,13 +39,9 @@ import {
   FileText,
   Users,
   BarChart3,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
   LogOut,
   Car,
+  Eye,
 } from "lucide-react";
 import ProductManagement from "@/features/products/components/ProductManagement";
 import CatalogManagement from "@/features/products/components/CatalogManagement";
@@ -139,7 +109,7 @@ const AdminPage = () => {
 
   const categoryOptions =
     categoriesData?.result?.map((cat) => ({
-      id: parseInt(cat.id),
+      id: Number.parseInt(cat.id),
       name: cat.name,
     })) || [];
 

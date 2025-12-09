@@ -73,6 +73,24 @@ export const Header = () => {
     return "U";
   };
 
+  const getHighestRole = (user: any) => {
+    if (!user?.roles || user.roles.length === 0) {
+      return "USER";
+    }
+    
+    // Check if user has ADMIN role
+    const hasAdmin = user.roles.some((role: any) => 
+      role.name?.toUpperCase() === "ADMIN"
+    );
+    
+    if (hasAdmin) {
+      return "ADMIN";
+    }
+    
+    // Otherwise return first role name in uppercase
+    return user.roles[0]?.name?.toUpperCase() || "USER";
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="container mx-auto px-4 py-4">
@@ -168,7 +186,7 @@ export const Header = () => {
                         {user?.email || user?.username}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        Role: {user?.role?.name || "User"}
+                        Role: {getHighestRole(user)}
                       </p>
                     </div>
                   </DropdownMenuLabel>

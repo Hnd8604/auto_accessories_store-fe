@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MoreHorizontal, Edit, Trash2, Loader2, Eye } from "lucide-react";
+import { Plus, MoreHorizontal, Edit, Trash2, Loader2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 // Validation schema
@@ -191,7 +191,7 @@ export const PostManagement: React.FC<PostManagementProps> = ({
       thumbnailUrl: post.thumbnailUrl || "",
       content: post.content,
       published: post.published,
-      categoryId: parseInt(post.categoryName || "0"), // Will need category ID mapping
+      categoryId: Number.parseInt(post.categoryName || "0"), // Will need category ID mapping
     });
     setIsEditDialogOpen(true);
   };
@@ -211,9 +211,9 @@ export const PostManagement: React.FC<PostManagementProps> = ({
 
   const onSubmit = (data: PostFormData) => {
     if (editingPost) {
-      updateMutation.mutate({ id: editingPost.id, data });
+      updateMutation.mutate({ id: editingPost.id, data: data as PostRequest });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(data as PostRequest);
     }
   };
 
@@ -224,7 +224,7 @@ export const PostManagement: React.FC<PostManagementProps> = ({
       <Card className={className}>
         <CardContent className="pt-6">
           <p className="text-destructive">
-            Lỗi khi tải bài viết: {(error as Error).message}
+            Lỗi khi tải bài viết: {error?.message || 'Unknown error'}
           </p>
         </CardContent>
       </Card>
@@ -398,7 +398,7 @@ export const PostManagement: React.FC<PostManagementProps> = ({
                   <FormItem>
                     <FormLabel>Danh mục</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      onValueChange={(value) => field.onChange(Number.parseInt(value))}
                       value={field.value?.toString()}
                     >
                       <FormControl>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -279,7 +279,7 @@ export const ProductManagement = ({
       <Card>
         <CardContent className="p-6">
           <div className="text-center text-red-600">
-            <p>Lỗi tải dữ liệu: {(error as Error).message}</p>
+            <p>Lỗi tải dữ liệu: {error?.message || 'Unknown error'}</p>
             <Button
               variant="outline"
               onClick={() =>
@@ -512,7 +512,7 @@ export const ProductManagement = ({
                       <Select
                         value={field.value?.toString() || ""}
                         onValueChange={(value) =>
-                          field.onChange(parseInt(value))
+                          field.onChange(Number.parseInt(value))
                         }
                       >
                         <FormControl>
@@ -545,7 +545,7 @@ export const ProductManagement = ({
                       <Select
                         value={field.value?.toString() || ""}
                         onValueChange={(value) =>
-                          field.onChange(parseInt(value))
+                          field.onChange(Number.parseInt(value))
                         }
                       >
                         <FormControl>
@@ -582,7 +582,7 @@ export const ProductManagement = ({
                           value={field.value || ""}
                           onChange={(e) => {
                             const value = e.target.value;
-                            field.onChange(value === "" ? 0 : parseInt(value));
+                            field.onChange(value === "" ? 0 : Number.parseInt(value));
                           }}
                           onBlur={field.onBlur}
                           name={field.name}
@@ -606,7 +606,7 @@ export const ProductManagement = ({
                           value={field.value || ""}
                           onChange={(e) => {
                             const value = e.target.value;
-                            field.onChange(value === "" ? 0 : parseInt(value));
+                            field.onChange(value === "" ? 0 : Number.parseInt(value));
                           }}
                           onBlur={field.onBlur}
                           name={field.name}

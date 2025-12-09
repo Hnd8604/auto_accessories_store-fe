@@ -189,9 +189,9 @@ export const PostCategoryManagement: React.FC<
 
   const onSubmit = (data: PostCategoryFormData) => {
     if (editingCategory) {
-      updateMutation.mutate({ id: editingCategory.id, data });
+      updateMutation.mutate({ id: editingCategory.id, data: data as PostCategoryRequest });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(data as PostCategoryRequest);
     }
   };
 
@@ -202,7 +202,7 @@ export const PostCategoryManagement: React.FC<
       <Card className={className}>
         <CardContent className="pt-6">
           <p className="text-destructive">
-            Lỗi khi tải danh mục: {(error as Error).message}
+            Lỗi khi tải danh mục: {error?.message || 'Unknown error'}
           </p>
         </CardContent>
       </Card>

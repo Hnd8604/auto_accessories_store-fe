@@ -18,7 +18,7 @@ export const Cart = () => {
   };
 
   const cartItems = cart?.items || [];
-  const totalPrice = cart?.totalPrice || 0;
+  const totalPrice = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
 
   const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
     if (newQuantity === 0) {
@@ -171,8 +171,7 @@ export const Cart = () => {
       <Checkout
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
-        cartItems={cartItems}
-        onOrderComplete={handleOrderComplete}
+        onComplete={handleOrderComplete}
       />
     </>
   );
