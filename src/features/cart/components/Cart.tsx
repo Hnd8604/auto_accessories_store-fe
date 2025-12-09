@@ -1,42 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Minus, Plus, X } from "lucide-react";
+import { ShoppingCart, Minus, Plus, X, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Checkout } from "@/features/cart/components/Checkout";
+import { useCart } from "@/context/cart-context";
 
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  category: string;
-}
-
-interface CartProps {
-  items?: CartItem[];
-}
-
-export const Cart = ({ items = [] }: CartProps) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(items);
+export const Cart = () => {
+  const { cart, itemCount, updateQuantity, removeFromCart, isLoading, clearCart } = useCart();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity === 0) {
-      removeItem(id);
-      return;
-    }
-    setCartItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
-  const removeItem = (id: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
-  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -45,26 +17,45 @@ export const Cart = ({ items = [] }: CartProps) => {
     }).format(price);
   };
 
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartItems = cart?.items || [];
+  const totalPrice = cart?.totalPrice || 0;
+
+  const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
+    if (newQuantity === 0) {
+      await removeFromCart(itemId);
+      return;
+    }
+    await updateQuantity(itemId, newQuantity);
+  };
+
+  const handleRemoveItem = async (itemId: number) => {
+    await removeFromCart(itemId);
+  };
 
   const handleOrderComplete = () => {
-    setCartItems([]);
+    clearCart();
+    setIsCheckoutOpen(false);
   };
 
   return (
     <>
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className="relative">
-            <ShoppingCart className="h-4 w-4" />
-            {totalItems > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-              >
-                {totalItems}
-              </Badge>
+          <Button variant="outline" size="sm" className="relative" disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <ShoppingCart className="h-4 w-4" />
+                {itemCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {itemCount}
+                  </Badge>
+                )}
+              </>
             )}
             <span className="ml-2 hidden sm:inline">Giỏ Hàng</span>
           </Button>
@@ -74,7 +65,7 @@ export const Cart = ({ items = [] }: CartProps) => {
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
-              Giỏ Hàng ({totalItems} sản phẩm)
+              Giỏ Hàng ({itemCount} sản phẩm)
             </SheetTitle>
           </SheetHeader>
 
@@ -94,28 +85,20 @@ export const Cart = ({ items = [] }: CartProps) => {
                   <div className="space-y-4">
                     {cartItems.map((item) => (
                       <div key={item.id} className="flex gap-4 p-4 bg-muted/30 rounded-lg">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-16 h-16 object-cover rounded-md"
-                        />
                         <div className="flex-1">
                           <h3 className="font-medium text-foreground line-clamp-2">
-                            {item.name}
+                            {item.productName || `Sản phẩm #${item.productId}`}
                           </h3>
-                          <Badge variant="outline" className="text-xs mt-1">
-                            {item.category}
-                          </Badge>
                           <div className="flex items-center justify-between mt-2">
                             <span className="font-bold text-primary">
-                              {formatPrice(item.price)}
+                              {formatPrice(item.unitPrice)}
                             </span>
                             <div className="flex items-center gap-2">
                               <Button
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
@@ -126,18 +109,21 @@ export const Cart = ({ items = [] }: CartProps) => {
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
                             </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Tổng: {formatPrice(item.totalPrice)}
                           </div>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => handleRemoveItem(item.id)}
                         >
                           <X className="h-4 w-4" />
                         </Button>

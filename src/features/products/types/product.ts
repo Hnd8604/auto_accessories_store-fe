@@ -8,6 +8,12 @@ export interface ProductResponse {
   brandName?: string;
   stockQuantity?: number;
   slug?: string;
+  primaryImageUrl?: string;
+  images?: Array<{
+    id: number;
+    imageUrl: string;
+    isPrimary: boolean;
+  }>;
 }
 
 // Product Request Types

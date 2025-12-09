@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Car, Phone, Mail, Menu, User, LogOut, Settings } from "lucide-react";
-import { Cart } from "@/features/cart/components/Cart";
+import { Badge } from "@/components/ui/badge";
+import { Car, Phone, Mail, Menu, User, LogOut, Settings, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { useCart } from "@/context/cart-context";
 import { isAdmin } from "@/features/auth/hooks/useAuth";
 import { AuthService } from "@/features/auth/api/auth";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +15,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const CartButton = () => {
+  const { itemCount } = useCart();
+  const navigate = useNavigate();
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="relative"
+      onClick={() => navigate("/cart")}
+    >
+      <ShoppingCart className="h-4 w-4" />
+      {itemCount > 0 && (
+        <Badge
+          variant="destructive"
+          className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+        >
+          {itemCount}
+        </Badge>
+      )}
+      <span className="ml-2 hidden sm:inline">Giỏ Hàng</span>
+    </Button>
+  );
+};
 
 export const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -164,7 +190,7 @@ export const Header = () => {
               </a>
             )}
 
-            <Cart />
+            <CartButton />
             <Button variant="luxury" size="sm">
               Tư Vấn Miễn Phí
             </Button>

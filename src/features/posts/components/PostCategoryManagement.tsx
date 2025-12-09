@@ -3,9 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { CategoriesApi } from "@/features/categories/api/categories";
+import { PostCategoriesApi } from "@/features/posts/api";
 import { useToast } from "@/hooks/use-toast";
-import type { CategoryResponse, CategoryRequest } from "@/features/products/types";
+import type {
+  PostCategoryResponse,
+  PostCategoryRequest,
+} from "@/features/posts/types";
 
 import {
   Card,
@@ -46,132 +49,123 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, MoreHorizontal, Eye, Edit, Trash2, Loader2 } from "lucide-react";
+import { Plus, MoreHorizontal, Edit, Trash2, Loader2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 // Validation schema
-const categorySchema = z.object({
+const postCategorySchema = z.object({
   name: z.string().min(1, "Tên danh mục là bắt buộc"),
   description: z.string().optional(),
 });
 
-type CategoryFormData = z.infer<typeof categorySchema>;
+type PostCategoryFormData = z.infer<typeof postCategorySchema>;
 
-interface CategoryManagementProps {
+interface PostCategoryManagementProps {
   className?: string;
 }
 
-export const CategoryManagement: React.FC<CategoryManagementProps> = ({
-  className,
-}) => {
+export const PostCategoryManagement: React.FC<
+  PostCategoryManagementProps
+> = ({ className }) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] =
-    useState<CategoryResponse | null>(null);
-  const [viewingCategory, setViewingCategory] =
-    useState<CategoryResponse | null>(null);
+    useState<PostCategoryResponse | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Form setup
-  const form = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
+  const form = useForm<PostCategoryFormData>({
+    resolver: zodResolver(postCategorySchema),
     defaultValues: {
       name: "",
       description: "",
     },
   });
 
-  // Query: Get all categories
+  // Query: Get all post categories
   const {
     data: categoriesData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["categories"],
-    queryFn: CategoriesApi.getAll,
+    queryKey: ["postCategories"],
+    queryFn: PostCategoriesApi.getAll,
   });
 
   // Mutation: Create category
   const createMutation = useMutation({
-    mutationFn: CategoriesApi.create,
+    mutationFn: PostCategoriesApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["postCategories"] });
       setIsCreateDialogOpen(false);
       form.reset();
       toast({
         title: "Thành công",
-        description: "Danh mục đã được tạo thành công",
+        description: "Danh mục bài viết đã được tạo thành công",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: "Lỗi",
-        description: error.message || "Có lỗi xảy ra khi tạo danh mục",
         variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Không thể tạo danh mục",
       });
     },
   });
 
   // Mutation: Update category
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: CategoryRequest }) =>
-      CategoriesApi.update(parseInt(id), data),
+    mutationFn: ({ id, data }: { id: number; data: PostCategoryRequest }) =>
+      PostCategoriesApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["postCategories"] });
       setIsEditDialogOpen(false);
       setEditingCategory(null);
       form.reset();
       toast({
         title: "Thành công",
-        description: "Danh mục đã được cập nhật thành công",
+        description: "Danh mục đã được cập nhật",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: "Lỗi",
-        description: error.message || "Có lỗi xảy ra khi cập nhật danh mục",
         variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật danh mục",
       });
     },
   });
 
   // Mutation: Delete category
   const deleteMutation = useMutation({
-    mutationFn: CategoriesApi.delete,
+    mutationFn: PostCategoriesApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["postCategories"] });
       toast({
         title: "Thành công",
-        description: "Danh mục đã được xóa thành công",
+        description: "Danh mục đã được xóa",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: "Lỗi",
-        description: error.message || "Có lỗi xảy ra khi xóa danh mục",
         variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Không thể xóa danh mục",
       });
     },
   });
 
-  // Handle form submission
-  const onSubmit = (data: CategoryFormData) => {
-    const categoryRequest: CategoryRequest = {
-      name: data.name,
-      description: data.description || undefined,
-    };
-
-    if (editingCategory) {
-      updateMutation.mutate({ id: editingCategory.id, data: categoryRequest });
-    } else {
-      createMutation.mutate(categoryRequest);
-    }
+  // Handlers
+  const handleCreate = () => {
+    form.reset();
+    setIsCreateDialogOpen(true);
   };
 
-  // Handle edit button click
-  const handleEdit = (category: CategoryResponse) => {
+  const handleEdit = (category: PostCategoryResponse) => {
     setEditingCategory(category);
     form.reset({
       name: category.name,
@@ -180,29 +174,36 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
     setIsEditDialogOpen(true);
   };
 
-  // Handle delete button click
-  const handleDelete = (categoryId: string) => {
-    if (confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-      deleteMutation.mutate(parseInt(categoryId));
+  const handleDelete = (id: number) => {
+    setCategoryToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (categoryToDelete) {
+      deleteMutation.mutate(categoryToDelete);
+      setDeleteConfirmOpen(false);
+      setCategoryToDelete(null);
     }
   };
 
-  // Handle view detail button click
-  const handleViewDetail = (category: CategoryResponse) => {
-    setViewingCategory(category);
-    setIsDetailDialogOpen(true);
+  const onSubmit = (data: PostCategoryFormData) => {
+    if (editingCategory) {
+      updateMutation.mutate({ id: editingCategory.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
-  // Get categories from response
   const categories = categoriesData?.result || [];
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-red-600">
-            Có lỗi xảy ra khi tải danh sách danh mục
-          </div>
+      <Card className={className}>
+        <CardContent className="pt-6">
+          <p className="text-destructive">
+            Lỗi khi tải danh mục: {(error as Error).message}
+          </p>
         </CardContent>
       </Card>
     );
@@ -210,26 +211,30 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
 
   return (
     <div className={className}>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Quản lý danh mục bài viết</h2>
+        <Button onClick={handleCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          Tạo danh mục
+        </Button>
+      </div>
+
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Quản lý Danh mục</CardTitle>
-              <CardDescription>
-                Quản lý danh mục sản phẩm trong hệ thống
-              </CardDescription>
-            </div>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Thêm danh mục
-            </Button>
-          </div>
+          <CardTitle>Danh sách danh mục</CardTitle>
+          <CardDescription>
+            Quản lý danh mục cho bài viết blog
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
+          ) : categories.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              Chưa có danh mục nào
+            </p>
           ) : (
             <Table>
               <TableHeader>
@@ -237,7 +242,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
                   <TableHead>ID</TableHead>
                   <TableHead>Tên danh mục</TableHead>
                   <TableHead>Mô tả</TableHead>
-                  <TableHead className="text-center">Số sản phẩm</TableHead>
+                  <TableHead className="text-center">Số bài viết</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -254,7 +259,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
                       {category.description || "Không có mô tả"}
                     </TableCell>
                     <TableCell className="text-center">
-                      {category.productCount ?? 0}
+                      {category.postCount ?? 0}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -300,15 +305,15 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {editingCategory ? "Chỉnh sửa danh mục" : "Tạo danh mục mới"}
             </DialogTitle>
             <DialogDescription>
               {editingCategory
-                ? "Cập nhật thông tin danh mục"
-                : "Nhập thông tin để tạo danh mục mới"}
+                ? "Cập nhật thông tin danh mục bài viết"
+                : "Thêm danh mục mới cho bài viết"}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -318,9 +323,9 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tên danh mục *</FormLabel>
+                    <FormLabel>Tên danh mục</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nhập tên danh mục..." {...field} />
+                      <Input placeholder="Nhập tên danh mục" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -335,7 +340,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
                     <FormLabel>Mô tả</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Mô tả chi tiết danh mục..."
+                        placeholder="Nhập mô tả danh mục..."
                         className="min-h-[100px]"
                         {...field}
                       />
@@ -345,7 +350,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
                 )}
               />
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end space-x-2 pt-4">
                 <Button
                   type="button"
                   variant="outline"
@@ -360,14 +365,12 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={
-                    createMutation.isPending || updateMutation.isPending
-                  }
+                  disabled={createMutation.isPending || updateMutation.isPending}
                 >
                   {(createMutation.isPending || updateMutation.isPending) && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   )}
-                  {editingCategory ? "Cập nhật" : "Tạo danh mục"}
+                  {editingCategory ? "Cập nhật" : "Tạo mới"}
                 </Button>
               </div>
             </form>
@@ -375,83 +378,16 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Category Detail Dialog */}
-      <Dialog
-        open={isDetailDialogOpen}
-        onOpenChange={(open) => {
-          setIsDetailDialogOpen(open);
-          if (!open) setViewingCategory(null);
-        }}
-      >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Chi tiết danh mục</DialogTitle>
-            <DialogDescription>
-              Thông tin chi tiết về danh mục
-            </DialogDescription>
-          </DialogHeader>
-
-          {viewingCategory && (
-            <div className="space-y-6">
-              {/* Category Information */}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    ID danh mục
-                  </label>
-                  <p className="text-base text-gray-600 font-mono">
-                    #{viewingCategory.id}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Tên danh mục
-                  </label>
-                  <p className="text-lg font-semibold">
-                    {viewingCategory.name}
-                  </p>
-                </div>
-
-                {viewingCategory.description && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Mô tả
-                    </label>
-                    <div className="mt-2 p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
-                      <p className="text-base text-gray-700 whitespace-pre-wrap">
-                        {viewingCategory.description}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsDetailDialogOpen(false);
-                    setViewingCategory(null);
-                  }}
-                >
-                  Đóng
-                </Button>
-                <Button
-                  onClick={() => {
-                    setIsDetailDialogOpen(false);
-                    handleEdit(viewingCategory);
-                  }}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Chỉnh sửa
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirm={confirmDelete}
+        title="Xác nhận xóa danh mục"
+        description="Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+      />
     </div>
   );
 };

@@ -2,8 +2,7 @@ import type { CartItemResponse } from './cart-item';
 
 // Cart Response Types
 export interface CartResponse {
-  totalPrice: number;
-  totalItems: number;
+  id: number;
   userId: string;
   items?: CartItemResponse[];
 }

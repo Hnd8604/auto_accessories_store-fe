@@ -5,6 +5,7 @@ import ProtectedRoute from "@/features/auth/components/ProtectedRoute";
 import Index from "@/pages/Index";
 import BlogPage from "@/pages/BlogPage";
 import AdminPage from "@/pages/AdminPage";
+import CartPage from "@/pages/CartPage";
 import NotFound from "@/pages/NotFound";
 
 // Feature Pages
@@ -17,6 +18,7 @@ export const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/products" element={<ProductsPage />} />
+      <Route path="/cart" element={<CartPage />} />
       <Route path="/order" element={<OrderPage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/auth" element={<AuthPage />} />

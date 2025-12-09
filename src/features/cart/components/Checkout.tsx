@@ -11,16 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/context/cart-context";
 import { CalendarDays, Clock, Car, Phone, Mail, MapPin, CreditCard, Truck } from "lucide-react";
-
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  category: string;
-}
 
 interface CheckoutFormData {
   customerName: string;
@@ -38,8 +30,7 @@ interface CheckoutFormData {
 interface CheckoutProps {
   isOpen: boolean;
   onClose: () => void;
-  cartItems: CartItem[];
-  onOrderComplete: () => void;
+  onComplete: () => void;
 }
 
 const timeSlots = [
@@ -52,8 +43,9 @@ const paymentMethods = [
   { value: "card", label: "Thẻ tín dụng", icon: "💳" },
 ];
 
-export const Checkout = ({ isOpen, onClose, cartItems, onOrderComplete }: CheckoutProps) => {
+export const Checkout = ({ isOpen, onClose, onComplete }: CheckoutProps) => {
   const { toast } = useToast();
+  const { cart, itemCount } = useCart();
   
   const form = useForm<CheckoutFormData>({
     defaultValues: {
@@ -77,8 +69,8 @@ export const Checkout = ({ isOpen, onClose, cartItems, onOrderComplete }: Checko
     }).format(price);
   };
 
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartItems = cart?.items || [];
+  const totalPrice = cart?.totalPrice || 0;
   const shippingFee = totalPrice >= 20000000 ? 0 : 500000;
   const finalTotal = totalPrice + shippingFee;
 
@@ -87,11 +79,11 @@ export const Checkout = ({ isOpen, onClose, cartItems, onOrderComplete }: Checko
     
     toast({
       title: "Đặt hàng thành công!",
-      description: `Đơn hàng ${totalItems} sản phẩm trị giá ${formatPrice(finalTotal)} đã được xác nhận.`,
+      description: `Đơn hàng ${itemCount} sản phẩm trị giá ${formatPrice(finalTotal)} đã được xác nhận.`,
     });
     
     form.reset();
-    onOrderComplete();
+    onComplete();
     onClose();
   };
 
@@ -115,28 +107,25 @@ export const Checkout = ({ isOpen, onClose, cartItems, onOrderComplete }: Checko
               <CardHeader>
                 <CardTitle className="text-automotive-red">Đơn Hàng Của Bạn</CardTitle>
                 <CardDescription>
-                  {totalItems} sản phẩm trong giỏ hàng
+                  {itemCount} sản phẩm trong giỏ hàng
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex gap-3 p-3 bg-muted/30 rounded-lg">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-12 h-12 object-cover rounded-md"
-                    />
+                    <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                      <Car className="h-6 w-6 text-muted-foreground" />
+                    </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-sm line-clamp-1">{item.name}</h4>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {item.category}
-                      </Badge>
+                      <h4 className="font-medium text-sm line-clamp-1">
+                        {item.productName || `Sản phẩm #${item.productId}`}
+                      </h4>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-sm text-muted-foreground">
                           SL: {item.quantity}
                         </span>
                         <span className="font-bold text-sm text-automotive-red">
-                          {formatPrice(item.price * item.quantity)}
+                          {formatPrice(item.totalPrice)}
                         </span>
                       </div>
                     </div>

@@ -1,2 +1,3 @@
 // Orders Components exports
-export { default as OrderForm } from './OrderForm';
+export * from './OrderForm';
+export * from './OrderManagement';

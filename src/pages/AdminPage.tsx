@@ -76,8 +76,11 @@ import {
 import { ProductManagement } from "@/features/products/components/ProductManagement";
 import { CatalogManagement } from "@/features/products/components/CatalogManagement";
 import { UserManagement } from "@/features/users/components/UserManagement";
+import { PostManagement, PostCategoryManagement } from "@/features/posts/components";
+import { OrderManagement } from "@/features/orders/components";
 import { CategoriesApi } from "@/features/categories/api/categories";
 import { BrandsApi } from "@/features/brands/api/brands";
+import { PostCategoriesApi } from "@/features/posts/api";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminPage = () => {
@@ -108,8 +111,8 @@ const AdminPage = () => {
   };
 
   const getUserDisplayName = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+    if (user?.fullName) {
+      return user.fullName;
     }
     return user?.username || "Admin";
   };
@@ -125,6 +128,11 @@ const AdminPage = () => {
     queryFn: BrandsApi.getAll,
   });
 
+  const { data: postCategoriesData } = useQuery({
+    queryKey: ["postCategories"],
+    queryFn: PostCategoriesApi.getAll,
+  });
+
   const categoryOptions =
     categoriesData?.result?.map((cat) => ({
       id: parseInt(cat.id),
@@ -135,6 +143,12 @@ const AdminPage = () => {
     brandsData?.result?.map((brand) => ({
       id: brand.id,
       name: brand.name,
+    })) || [];
+
+  const postCategoryOptions =
+    postCategoriesData?.result?.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
     })) || [];
 
   // Mock data for other sections
@@ -330,7 +344,7 @@ const AdminPage = () => {
                     </p>
                   )}
                   <p className="text-xs leading-none text-muted-foreground">
-                    Role: {user?.role?.name || "Admin"}
+                    Role: {user?.roles?.[0]?.name || "Admin"}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -410,7 +424,6 @@ const AdminPage = () => {
             <TabsTrigger value="catalog">Danh mục & Thương hiệu</TabsTrigger>
             <TabsTrigger value="posts">Bài viết</TabsTrigger>
             <TabsTrigger value="users">Người dùng</TabsTrigger>
-            <TabsTrigger value="customers">Khách hàng</TabsTrigger>
           </TabsList>
 
           {/* Analytics Tab */}
@@ -599,86 +612,7 @@ const AdminPage = () => {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Quản lý đơn hàng</h2>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Tạo đơn hàng
-              </Button>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Danh sách đơn hàng</CardTitle>
-                <CardDescription>
-                  Quản lý tất cả đơn hàng của khách hàng
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mã đơn</TableHead>
-                      <TableHead>Khách hàng</TableHead>
-                      <TableHead>Dịch vụ</TableHead>
-                      <TableHead>Xe</TableHead>
-                      <TableHead>Trạng thái</TableHead>
-                      <TableHead>Tổng tiền</TableHead>
-                      <TableHead>Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">
-                          {order.id}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{order.customer}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {order.phone}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{order.service}</TableCell>
-                        <TableCell>{order.car}</TableCell>
-                        <TableCell>{getStatusBadge(order.status)}</TableCell>
-                        <TableCell className="font-medium">
-                          {order.total}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="bg-background border shadow-md"
-                            >
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Xem chi tiết
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Chỉnh sửa
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Xóa
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <OrderManagement />
           </TabsContent>
 
           {/* Products Tab */}
@@ -696,143 +630,23 @@ const AdminPage = () => {
 
           {/* Posts Tab */}
           <TabsContent value="posts" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Quản lý bài viết</h2>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tạo bài viết
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Tạo bài viết mới</DialogTitle>
-                    <DialogDescription>
-                      Thêm bài viết mới cho blog của AutoLux Interior
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Tiêu đề</label>
-                      <Input placeholder="Nhập tiêu đề bài viết" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Trạng thái</label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn trạng thái" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">Bản nháp</SelectItem>
-                          <SelectItem value="published">Xuất bản</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Nội dung</label>
-                      <Textarea
-                        placeholder="Nhập nội dung bài viết..."
-                        className="min-h-[200px]"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline">Hủy</Button>
-                      <Button>Lưu bài viết</Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Danh sách bài viết</CardTitle>
-                <CardDescription>
-                  Quản lý tất cả bài viết trên blog
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tiêu đề</TableHead>
-                      <TableHead>Tác giả</TableHead>
-                      <TableHead>Trạng thái</TableHead>
-                      <TableHead>Lượt xem</TableHead>
-                      <TableHead>Ngày tạo</TableHead>
-                      <TableHead>Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {posts.map((post) => (
-                      <TableRow key={post.id}>
-                        <TableCell className="font-medium">
-                          {post.title}
-                        </TableCell>
-                        <TableCell>{post.author}</TableCell>
-                        <TableCell>{getStatusBadge(post.status)}</TableCell>
-                        <TableCell>{post.views.toLocaleString()}</TableCell>
-                        <TableCell>{post.date}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="bg-background border shadow-md"
-                            >
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Xem bài viết
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Chỉnh sửa
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Xóa
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <Tabs defaultValue="posts" className="w-full">
+              <TabsList>
+                <TabsTrigger value="posts">Bài viết</TabsTrigger>
+                <TabsTrigger value="postCategories">Danh mục</TabsTrigger>
+              </TabsList>
+              <TabsContent value="posts" className="space-y-6">
+                <PostManagement categoryOptions={postCategoryOptions} />
+              </TabsContent>
+              <TabsContent value="postCategories" className="space-y-6">
+                <PostCategoryManagement />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-6">
             <UserManagement />
-          </TabsContent>
-
-          {/* Customers Tab */}
-          <TabsContent value="customers" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Quản lý khách hàng</h2>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Danh sách khách hàng</CardTitle>
-                <CardDescription>
-                  Thông tin tất cả khách hàng đã sử dụng dịch vụ
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Chức năng quản lý khách hàng đang được phát triển</p>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>

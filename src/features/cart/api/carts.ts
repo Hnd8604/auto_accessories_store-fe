@@ -10,7 +10,7 @@ import type {
 } from "../types";
 
 export const CartsApi = {
-  create: (payload: CartRequest) => http.request<ApiResponse<CartCreationResponse>>("/carts", { method: "POST", body: payload }),
+  getMyCart: () => http.request<ApiResponse<CartResponse>>("/carts/my-cart"),
   getById: (cartId: number) => http.request<ApiResponse<CartResponse>>(`/carts/${cartId}`),
   getItems: (cartId: number) => http.request<ApiResponse<CartItemResponse[]>>(`/carts/${cartId}/items`),
   addItem: (payload: CartItemRequest) => http.request<ApiResponse<CartItemResponse>>("/carts/items", { method: "POST", body: payload }),

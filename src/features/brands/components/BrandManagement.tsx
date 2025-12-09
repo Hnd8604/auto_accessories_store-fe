@@ -235,6 +235,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({
                   <TableHead>ID</TableHead>
                   <TableHead>Tên thương hiệu</TableHead>
                   <TableHead>Mô tả</TableHead>
+                  <TableHead className="text-center">Số sản phẩm</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -248,6 +249,9 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({
                     <TableCell className="max-w-xs truncate">
                       {brand.description || "Không có mô tả"}
                     </TableCell>
+                    <TableCell className="text-center">
+                      {brand.productCount ?? 0}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -256,12 +260,6 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleViewDetail(brand)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Xem chi tiết
-                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(brand)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Chỉnh sửa

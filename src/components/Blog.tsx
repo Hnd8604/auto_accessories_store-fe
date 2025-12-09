@@ -26,7 +26,7 @@ const blogPosts: BlogPost[] = [
     author: "Nguyễn Văn A",
     date: "2024-01-15",
     category: "Hướng Dẫn",
-    image: "/api/placeholder/600/400",
+    image: "https://placehold.co/600x400?text=Blog+Post",
     readTime: 5,
     tags: ["ghế da", "nội thất", "hướng dẫn"]
   },
@@ -38,7 +38,7 @@ const blogPosts: BlogPost[] = [
     author: "Trần Thị B",
     date: "2024-01-10",
     category: "Xu Hướng",
-    image: "/api/placeholder/600/400",
+    image: "https://placehold.co/600x400?text=Blog+Post",
     readTime: 7,
     tags: ["xu hướng", "2024", "thiết kế"]
   },
@@ -50,7 +50,7 @@ const blogPosts: BlogPost[] = [
     author: "Lê Văn C",
     date: "2024-01-05",
     category: "Bảo Dưỡng",
-    image: "/api/placeholder/600/400",
+    image: "https://placehold.co/600x400?text=Blog+Post",
     readTime: 6,
     tags: ["bảo dưỡng", "da", "chăm sóc"]
   },
@@ -62,7 +62,7 @@ const blogPosts: BlogPost[] = [
     author: "Phạm Văn D",
     date: "2024-01-01",
     category: "Kiến Thức",
-    image: "/api/placeholder/600/400",
+    image: "https://placehold.co/600x400?text=Blog+Post",
     readTime: 8,
     tags: ["carbon fiber", "so sánh", "kiến thức"]
   }
