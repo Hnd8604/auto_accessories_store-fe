@@ -579,10 +579,13 @@ export const ProductManagement = ({
                         <Input
                           type="number"
                           placeholder="0"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value) || 0)
-                          }
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === "" ? 0 : parseInt(value));
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
                         />
                       </FormControl>
                       <FormMessage />
@@ -600,10 +603,13 @@ export const ProductManagement = ({
                         <Input
                           type="number"
                           placeholder="0"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value) || 0)
-                          }
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === "" ? 0 : parseInt(value));
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
                         />
                       </FormControl>
                       <FormMessage />
@@ -836,3 +842,5 @@ export const ProductManagement = ({
     </div>
   );
 };
+
+export default ProductManagement;

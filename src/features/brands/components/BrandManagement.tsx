@@ -314,7 +314,14 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({
                   <FormItem>
                     <FormLabel>Tên thương hiệu *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nhập tên thương hiệu..." {...field} />
+                      <Input 
+                        placeholder="Nhập tên thương hiệu..." 
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

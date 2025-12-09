@@ -28,3 +28,5 @@ export const CatalogManagement: React.FC<CatalogManagementProps> = ({
     </div>
   );
 };
+
+export default CatalogManagement;

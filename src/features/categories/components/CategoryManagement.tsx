@@ -320,7 +320,14 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({
                   <FormItem>
                     <FormLabel>Tên danh mục *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nhập tên danh mục..." {...field} />
+                      <Input 
+                        placeholder="Nhập tên danh mục..." 
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

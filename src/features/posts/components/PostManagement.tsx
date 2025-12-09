@@ -279,9 +279,9 @@ export const PostManagement: React.FC<PostManagementProps> = ({
                     <TableCell>{post.categoryName || "-"}</TableCell>
                     <TableCell>
                       {post.published ? (
-                        <Badge variant="default">Đã xuất bản</Badge>
+                        <Badge className="bg-green-600 text-white hover:bg-green-700">Đã xuất bản</Badge>
                       ) : (
-                        <Badge variant="secondary">Bản nháp</Badge>
+                        <Badge variant="secondary">Ẩn</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-center">
@@ -446,9 +446,9 @@ export const PostManagement: React.FC<PostManagementProps> = ({
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Xuất bản</FormLabel>
+                      <FormLabel className="text-base">Trạng thái</FormLabel>
                       <FormDescription>
-                        Bài viết sẽ hiển thị công khai trên website
+                        {field.value ? "Bài viết đã xuất bản công khai" : "Bài viết đang ẩn"}
                       </FormDescription>
                     </div>
                     <FormControl>

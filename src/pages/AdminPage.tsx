@@ -73,8 +73,8 @@ import {
   LogOut,
   Car,
 } from "lucide-react";
-import { ProductManagement } from "@/features/products/components/ProductManagement";
-import { CatalogManagement } from "@/features/products/components/CatalogManagement";
+import ProductManagement from "@/features/products/components/ProductManagement";
+import CatalogManagement from "@/features/products/components/CatalogManagement";
 import { UserManagement } from "@/features/users/components/UserManagement";
 import { PostManagement, PostCategoryManagement } from "@/features/posts/components";
 import { OrderManagement } from "@/features/orders/components";
@@ -307,36 +307,95 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Car className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-bold">AutoLux Admin</h1>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <aside className="hidden lg:flex lg:flex-col w-64 bg-white border-r shadow-sm">
+        <div className="p-6 border-b">
+          <div className="flex items-center space-x-2">
+            <Car className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-lg font-bold">AutoLux</h1>
+              <p className="text-xs text-muted-foreground">Admin Dashboard</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewWebsite}
-              className="hidden md:flex"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Xem trang web
-            </Button>
           </div>
+        </div>
+        
+        <nav className="flex-1 p-4 space-y-1">
+          <Button
+            variant={activeTab === "analytics" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("analytics")}
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Thống kê
+          </Button>
+          <Button
+            variant={activeTab === "orders" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("orders")}
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Đơn hàng
+          </Button>
+          <Button
+            variant={activeTab === "products" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("products")}
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Sản phẩm
+          </Button>
+          <Button
+            variant={activeTab === "catalog" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("catalog")}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Danh mục & Thương hiệu
+          </Button>
+          <Button
+            variant={activeTab === "posts" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("posts")}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Bài viết
+          </Button>
+          <Button
+            variant={activeTab === "post-categories" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("post-categories")}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Danh mục bài viết
+          </Button>
+          <Button
+            variant={activeTab === "users" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("users")}
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Người dùng
+          </Button>
+        </nav>
+
+        <div className="p-4 border-t">
+          <Button
+            variant="outline"
+            className="w-full justify-start mb-2"
+            onClick={handleViewWebsite}
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            Xem trang web
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Users className="h-4 w-4 mr-2" />
-                {getUserDisplayName()}
+              <Button variant="ghost" className="w-full justify-start">
+                <Users className="mr-2 h-4 w-4" />
+                <span className="truncate">{getUserDisplayName()}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="bg-background border shadow-md"
-            >
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
@@ -353,22 +412,57 @@ const AdminPage = () => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleViewWebsite}>
-                <Eye className="h-4 w-4 mr-2" />
-                Xem trang web
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
+                <LogOut className="mr-2 h-4 w-4" />
                 Đăng xuất
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </header>
+      </aside>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Mobile Header */}
+        <header className="lg:hidden border-b bg-white">
+          <div className="px-4 h-16 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Car className="h-6 w-6 text-primary" />
+              <h1 className="text-lg font-bold">AutoLux Admin</h1>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Users className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">{getUserDisplayName()}</p>
+                    {user?.email && (
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    )}
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleViewWebsite}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Xem trang web
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Đăng xuất
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-6">
+        {/* Stats Cards - Only show on analytics tab */}
+        {activeTab === "analytics" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -418,20 +512,11 @@ const AdminPage = () => {
             </CardContent>
           </Card>
         </div>
+        )}
 
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="analytics">Thống kê</TabsTrigger>
-            <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
-            <TabsTrigger value="products">Sản phẩm</TabsTrigger>
-            <TabsTrigger value="catalog">Danh mục & Thương hiệu</TabsTrigger>
-            <TabsTrigger value="posts">Bài viết</TabsTrigger>
-            <TabsTrigger value="users">Người dùng</TabsTrigger>
-          </TabsList>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
+          {/* Analytics Tab Charts */}
+          {activeTab === "analytics" && (
+          <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Thống kê & Báo cáo</h2>
             </div>
@@ -612,47 +697,42 @@ const AdminPage = () => {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          </div>
+          )}
 
           {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-6">
+          {activeTab === "orders" && (
             <OrderManagement />
-          </TabsContent>
+          )}
 
           {/* Products Tab */}
-          <TabsContent value="products" className="space-y-6">
+          {activeTab === "products" && (
             <ProductManagement
               categoryOptions={categoryOptions}
               brandOptions={brandOptions}
             />
-          </TabsContent>
+          )}
 
           {/* Catalog Management Tab */}
-          <TabsContent value="catalog" className="space-y-6">
+          {activeTab === "catalog" && (
             <CatalogManagement />
-          </TabsContent>
+          )}
 
           {/* Posts Tab */}
-          <TabsContent value="posts" className="space-y-6">
-            <Tabs defaultValue="posts" className="w-full">
-              <TabsList>
-                <TabsTrigger value="posts">Bài viết</TabsTrigger>
-                <TabsTrigger value="postCategories">Danh mục</TabsTrigger>
-              </TabsList>
-              <TabsContent value="posts" className="space-y-6">
-                <PostManagement categoryOptions={postCategoryOptions} />
-              </TabsContent>
-              <TabsContent value="postCategories" className="space-y-6">
-                <PostCategoryManagement />
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
+          {activeTab === "posts" && (
+            <PostManagement categoryOptions={postCategoryOptions} />
+          )}
+
+          {/* Post Categories Tab */}
+          {activeTab === "post-categories" && (
+            <PostCategoryManagement />
+          )}
 
           {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
+          {activeTab === "users" && (
             <UserManagement />
-          </TabsContent>
-        </Tabs>
+          )}
+        </main>
       </div>
     </div>
   );
