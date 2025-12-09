@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Eye, Heart, Star, Loader2 } from "lucide-react";
 import { ProductsApi, ProductImagesApi } from "@/features/products/api";
+import { CategoriesApi } from "@/features/categories/api/categories";
 import type { ProductResponse } from "@/features/products/types";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/cart-context";
@@ -29,18 +30,23 @@ export const Products = ({ limit = 6 }: ProductsProps) => {
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
-    queryFn: ProductsApi.getAllCategories,
+    queryFn: CategoriesApi.getAll,
   });
 
   const products = productsData?.result?.content || [];
   const categories = ["Tất Cả", ...(categoriesData?.result?.map(c => c.name) || [])];
 
-  // Fetch images for each product
+  // Filter products first, THEN fetch images only for displayed products
+  const filteredProducts = selectedCategory === "Tất Cả" 
+    ? products.slice(0, limit)
+    : products.filter(product => product.categoryName === selectedCategory).slice(0, limit);
+
+  // Fetch images ONLY for filtered/displayed products
   useEffect(() => {
-    if (products.length > 0) {
+    if (filteredProducts.length > 0) {
       setLoadingImages(true);
       Promise.all(
-        products.map(async (product) => {
+        filteredProducts.map(async (product) => {
           try {
             const response = await ProductImagesApi.getByProductId(product.id);
             const images = response?.result || [];
@@ -62,17 +68,16 @@ export const Products = ({ limit = 6 }: ProductsProps) => {
         })
         .catch(error => {
           console.error('Failed to fetch product images:', error);
-          setProductsWithImages(products);
+          setProductsWithImages(filteredProducts);
           setLoadingImages(false);
         });
+    } else {
+      setProductsWithImages([]);
+      setLoadingImages(false);
     }
-  }, [products]);
+  }, [filteredProducts.map(p => p.id).join(','), selectedCategory]);
 
-  const displayProducts = productsWithImages.length > 0 ? productsWithImages : products;
-
-  const filteredProducts = selectedCategory === "Tất Cả" 
-    ? displayProducts.slice(0, limit)
-    : displayProducts.filter(product => product.categoryName === selectedCategory).slice(0, limit);
+  const displayProducts = productsWithImages.length > 0 ? productsWithImages : filteredProducts;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -96,7 +101,7 @@ export const Products = ({ limit = 6 }: ProductsProps) => {
     navigate(`/products/${slug}`);
   };
 
-  if (productsLoading || categoriesLoading || loadingImages) {
+  if (productsLoading || categoriesLoading) {
     return (
       <section className="py-20 bg-muted/20">
         <div className="container mx-auto px-4">
@@ -138,12 +143,16 @@ export const Products = ({ limit = 6 }: ProductsProps) => {
 
         {/* Products Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {filteredProducts.length === 0 ? (
+          {loadingImages ? (
+            <div className="col-span-full flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : displayProducts.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-lg text-muted-foreground">Không có sản phẩm nào</p>
             </div>
           ) : (
-            filteredProducts.map((product) => (
+            displayProducts.map((product) => (
               <Card 
                 key={product.id} 
                 className="group bg-card border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden cursor-pointer"
