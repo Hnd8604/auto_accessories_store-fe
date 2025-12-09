@@ -76,22 +76,21 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [sessionCartData]);
 
-  const cart = cartData?.result || null;
-  const cartItems = cart?.items || [];
+  const cart = useMemo(() => cartData?.result || null, [cartData]);
+  const cartItems = useMemo(() => cart?.items || [], [cart]);
   
   // Calculate item count: count unique products, not total quantity
-  const itemCount = isAuthenticated 
-    ? cartItems.length
-    : Object.keys(sessionCart).length;
+  const itemCount = useMemo(() => 
+    isAuthenticated 
+      ? cartItems.length
+      : Object.keys(sessionCart).length,
+    [isAuthenticated, cartItems.length, sessionCart]
+  );
   
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
-  
-  // Enhanced cart with calculated values
-  const enhancedCart = cart ? {
-    ...cart,
-    totalPrice,
-    totalItems: itemCount,
-  } : null;
+  const totalPrice = useMemo(() => 
+    cartItems.reduce((sum, item) => sum + item.totalPrice, 0),
+    [cartItems]
+  );
 
   // Add item mutation
   const addItemMutation = useMutation({
@@ -194,7 +193,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const contextValue = useMemo(
     () => ({
-      cart: enhancedCart,
+      cart,
       cartId,
       sessionCart,
       isLoading,
@@ -205,7 +204,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       clearCart,
       itemCount,
     }),
-    [enhancedCart, cartId, sessionCart, isLoading, isAuthenticated, itemCount]
+    [cart, cartId, sessionCart, isLoading, isAuthenticated, addToCart, removeFromCart, updateQuantity, clearCart, itemCount]
   );
 
   return (

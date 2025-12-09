@@ -17,16 +17,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const CartButton = () => {
+import { memo, useCallback } from "react";
+
+const CartButton = memo(() => {
   const { itemCount } = useCart();
   const navigate = useNavigate();
+
+  const handleClick = useCallback(() => {
+    navigate("/cart");
+  }, [navigate]);
 
   return (
     <Button
       variant="outline"
       size="sm"
       className="relative"
-      onClick={() => navigate("/cart")}
+      onClick={handleClick}
     >
       <ShoppingCart className="h-4 w-4" />
       {itemCount > 0 && (
@@ -40,14 +46,16 @@ const CartButton = () => {
       <span className="ml-2 hidden sm:inline">Giỏ Hàng</span>
     </Button>
   );
-};
+});
 
-export const Header = () => {
+CartButton.displayName = "CartButton";
+
+export const Header = memo(() => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await AuthService.logout();
       logout();
@@ -61,9 +69,9 @@ export const Header = () => {
       queryClient.invalidateQueries({ queryKey: ["sessionCart"] });
       navigate("/");
     }
-  };
+  }, [logout, queryClient, navigate]);
 
-  const getUserInitials = (user: any) => {
+  const getUserInitials = useCallback((user: any) => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     }
@@ -71,9 +79,9 @@ export const Header = () => {
       return user.username[0].toUpperCase();
     }
     return "U";
-  };
+  }, []);
 
-  const getHighestRole = (user: any) => {
+  const getHighestRole = useCallback((user: any) => {
     if (!user?.roles || user.roles.length === 0) {
       return "USER";
     }
@@ -89,7 +97,7 @@ export const Header = () => {
     
     // Otherwise return first role name in uppercase
     return user.roles[0]?.name?.toUpperCase() || "USER";
-  };
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -222,4 +230,6 @@ export const Header = () => {
       </div>
     </header>
   );
-};
+});
+
+Header.displayName = "Header";

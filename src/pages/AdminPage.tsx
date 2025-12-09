@@ -44,7 +44,8 @@ import {
   Eye,
 } from "lucide-react";
 import ProductManagement from "@/features/products/components/ProductManagement";
-import CatalogManagement from "@/features/products/components/CatalogManagement";
+import { CategoryManagement } from "@/features/categories/components/CategoryManagement";
+import { BrandManagement } from "@/features/brands/components/BrandManagement";
 import { UserManagement } from "@/features/users/components/UserManagement";
 import { PostManagement, PostCategoryManagement } from "@/features/posts/components";
 import { OrderManagement } from "@/features/orders/components";
@@ -316,12 +317,20 @@ const AdminPage = () => {
             Sản phẩm
           </Button>
           <Button
-            variant={activeTab === "catalog" ? "secondary" : "ghost"}
+            variant={activeTab === "categories" ? "secondary" : "ghost"}
             className="w-full justify-start"
-            onClick={() => setActiveTab("catalog")}
+            onClick={() => setActiveTab("categories")}
           >
             <FileText className="mr-2 h-4 w-4" />
-            Danh mục & Thương hiệu
+            Danh mục sản phẩm
+          </Button>
+          <Button
+            variant={activeTab === "brands" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("brands")}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Thương hiệu
           </Button>
           <Button
             variant={activeTab === "posts" ? "secondary" : "ghost"}
@@ -683,9 +692,20 @@ const AdminPage = () => {
             />
           )}
 
-          {/* Catalog Management Tab */}
-          {activeTab === "catalog" && (
-            <CatalogManagement />
+          {/* Categories Tab */}
+          {activeTab === "categories" && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Quản lý Danh mục sản phẩm</h2>
+              <CategoryManagement />
+            </div>
+          )}
+
+          {/* Brands Tab */}
+          {activeTab === "brands" && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Quản lý Thương hiệu</h2>
+              <BrandManagement />
+            </div>
           )}
 
           {/* Posts Tab */}

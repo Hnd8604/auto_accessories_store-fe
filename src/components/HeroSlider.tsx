@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import hero1 from "@/assets/hero-interior.jpg";
 import hero2 from "@/assets/seats.jpg";
 import hero3 from "@/assets/steering-wheel.jpg";
@@ -13,7 +13,14 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 
-const slides = [
+interface Slide {
+  image: string;
+  title: string;
+  desc: string;
+  cta: string;
+}
+
+const slides: Slide[] = [
   {
     image: hero1,
     title: "Nâng Tầm Đẳng Cấp Nội Thất Xe Hơi",
@@ -40,7 +47,9 @@ const slides = [
   },
 ];
 
-export const HeroSlider = () => {
+const AUTOPLAY_INTERVAL = 5000;
+
+export const HeroSlider = memo(() => {
   const [api, setApi] = useState<CarouselApi | null>(null);
 
   // Simple autoplay
@@ -48,7 +57,7 @@ export const HeroSlider = () => {
     if (!api) return;
     const id = setInterval(() => {
       api.scrollNext();
-    }, 5000);
+    }, AUTOPLAY_INTERVAL);
     return () => clearInterval(id);
   }, [api]);
 
@@ -141,6 +150,8 @@ export const HeroSlider = () => {
       </Carousel>
     </section>
   );
-};
+});
+
+HeroSlider.displayName = "HeroSlider";
 
 export default HeroSlider;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { PostsApi } from "@/features/posts/api";
 import { PostCategoriesApi } from "@/features/posts/api";
 import type { PostResponse } from "@/features/posts/types";
 
-export const Blog = () => {
+export const Blog = memo(() => {
   const [selectedCategory, setSelectedCategory] = useState("Tất Cả");
   const [selectedPost, setSelectedPost] = useState<PostResponse | null>(null);
 
@@ -24,24 +24,30 @@ export const Blog = () => {
     queryFn: () => PostCategoriesApi.getAll(),
   });
 
-  const posts = postsData?.result?.content || [];
-  const categoryList = categoriesData?.result || [];
-  const categories = ["Tất Cả", ...categoryList.map(c => c.name)];
+  const posts = useMemo(() => postsData?.result?.content || [], [postsData]);
+  const categoryList = useMemo(() => categoriesData?.result || [], [categoriesData]);
+  const categories = useMemo(() => 
+    ["Tất Cả", ...categoryList.map(c => c.name)], 
+    [categoryList]
+  );
 
-  const filteredPosts = selectedCategory === "Tất Cả" 
-    ? posts 
-    : posts.filter(post => post.categoryName === selectedCategory);
+  const filteredPosts = useMemo(() => 
+    selectedCategory === "Tất Cả" 
+      ? posts 
+      : posts.filter(post => post.categoryName === selectedCategory),
+    [selectedCategory, posts]
+  );
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = useCallback((dateString?: string) => {
     if (!dateString) return "";
     return new Date(dateString).toLocaleDateString('vi-VN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
-  };
+  }, []);
 
-  const handlePostClick = async (post: PostResponse) => {
+  const handlePostClick = useCallback(async (post: PostResponse) => {
     setSelectedPost(post);
     // Increment view count
     try {
@@ -49,7 +55,7 @@ export const Blog = () => {
     } catch (error) {
       console.error('Failed to increment view count:', error);
     }
-  };
+  }, []);
 
   if (postsLoading || categoriesLoading) {
     return (
@@ -243,4 +249,6 @@ export const Blog = () => {
       </div>
     </section>
   );
-};
+});
+
+Blog.displayName = "Blog";

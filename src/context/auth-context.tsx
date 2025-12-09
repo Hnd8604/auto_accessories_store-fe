@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     restoreSession();
   }, []);
 
-  const login = (
+  const login = React.useCallback((
     userData: UserResponse,
     accessToken: string,
     refreshToken: string
@@ -67,26 +67,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(userData);
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = React.useCallback(() => {
     setUser(null);
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
-  };
+  }, []);
 
-  const updateUser = (userData: UserResponse) => {
+  const updateUser = React.useCallback((userData: UserResponse) => {
     setUser(userData);
-  };
+  }, []);
 
-  const value: AuthContextType = {
+  const value: AuthContextType = React.useMemo(() => ({
     user,
     isAuthenticated,
     isLoading,
     login,
     logout,
     updateUser,
-  };
+  }), [user, isAuthenticated, isLoading, login, logout, updateUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

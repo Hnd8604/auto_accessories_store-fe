@@ -3,38 +3,43 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Minus, Plus, X, ShoppingCart, ArrowLeft, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Checkout } from "@/features/cart/components/Checkout";
 import { useNavigate } from "react-router-dom";
 import { ProductImagesApi, ProductsApi } from "@/features/products/api";
 import { SessionCartsApi } from "@/features/cart/api/session-carts";
 import { useQueryClient } from "@tanstack/react-query";
 
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(price);
+};
+
+interface SessionProduct {
+  id: number;
+  productId: number;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  imageUrl?: string;
+}
+
 export default function CartPage() {
   const { cart, sessionCart, isAuthenticated, itemCount, updateQuantity, removeFromCart, clearCart } = useCart();
   const queryClient = useQueryClient();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [productImages, setProductImages] = useState<Record<number, string>>({});
-  const [sessionProducts, setSessionProducts] = useState<Array<{
-    id: number;
-    productId: number;
-    productName: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-    imageUrl?: string;
-  }>>([]);
+  const [sessionProducts, setSessionProducts] = useState<SessionProduct[]>([]);
   const navigate = useNavigate();
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
-  };
-
-  const cartItems = cart?.items || [];
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const cartItems = useMemo(() => cart?.items || [], [cart?.items]);
+  const totalPrice = useMemo(() => 
+    cartItems.reduce((sum, item) => sum + item.totalPrice, 0),
+    [cartItems]
+  );
 
   // Fetch session cart products for guest users
   useEffect(() => {
@@ -107,20 +112,20 @@ export default function CartPage() {
     fetchImages();
   }, [cartItems.length, isAuthenticated]);
 
-  const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
+  const handleUpdateQuantity = useCallback(async (itemId: number, newQuantity: number) => {
     if (newQuantity === 0) {
       await removeFromCart(itemId);
       return;
     }
     await updateQuantity(itemId, newQuantity);
-  };
+  }, [removeFromCart, updateQuantity]);
 
-  const handleRemoveItem = async (itemId: number) => {
+  const handleRemoveItem = useCallback(async (itemId: number) => {
     await removeFromCart(itemId);
-  };
+  }, [removeFromCart]);
 
   // Session cart handlers
-  const handleSessionUpdateQuantity = async (productId: number, newQuantity: number) => {
+  const handleSessionUpdateQuantity = useCallback(async (productId: number, newQuantity: number) => {
     try {
       if (newQuantity === 0) {
         await SessionCartsApi.remove(productId);
@@ -138,9 +143,9 @@ export default function CartPage() {
     } catch (error) {
       console.error("Failed to update session cart:", error);
     }
-  };
+  }, [sessionCart, queryClient]);
 
-  const handleSessionRemoveItem = async (productId: number) => {
+  const handleSessionRemoveItem = useCallback(async (productId: number) => {
     try {
       await SessionCartsApi.remove(productId);
       // Refetch session cart to update UI
@@ -148,12 +153,12 @@ export default function CartPage() {
     } catch (error) {
       console.error("Failed to remove from session cart:", error);
     }
-  };
+  }, [queryClient]);
 
-  const handleOrderComplete = () => {
+  const handleOrderComplete = useCallback(() => {
     clearCart();
     setIsCheckoutOpen(false);
-  };
+  }, [clearCart]);
 
   return (
     <div className="min-h-screen bg-background py-8">
