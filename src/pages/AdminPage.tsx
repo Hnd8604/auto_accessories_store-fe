@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth-context";
 import { AuthService } from "@/features/auth/api/auth";
@@ -88,6 +88,7 @@ const AdminPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
 
   const handleViewWebsite = () => {
     navigate("/");
@@ -97,6 +98,8 @@ const AdminPage = () => {
     try {
       await AuthService.logout();
       logout();
+      // Invalidate sessionCart to refetch after logout
+      queryClient.invalidateQueries({ queryKey: ["sessionCart"] });
       navigate("/");
       toast({
         title: "Đăng xuất thành công",
@@ -106,6 +109,7 @@ const AdminPage = () => {
       console.error("Logout error:", error);
       // Still logout locally even if API call fails
       logout();
+      queryClient.invalidateQueries({ queryKey: ["sessionCart"] });
       navigate("/");
     }
   };

@@ -6,6 +6,7 @@ import { useCart } from "@/context/cart-context";
 import { isAdmin } from "@/features/auth/hooks/useAuth";
 import { AuthService } from "@/features/auth/api/auth";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,16 +45,20 @@ const CartButton = () => {
 export const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     try {
       await AuthService.logout();
       logout();
+      // Invalidate sessionCart to refetch after logout
+      queryClient.invalidateQueries({ queryKey: ["sessionCart"] });
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
       // Still logout locally even if API call fails
       logout();
+      queryClient.invalidateQueries({ queryKey: ["sessionCart"] });
       navigate("/");
     }
   };

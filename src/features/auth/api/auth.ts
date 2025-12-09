@@ -1,4 +1,4 @@
-import AuthHttpClient from "@/services/axios";
+import AuthHttpClient, { simpleHttp } from "@/services/axios";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, API_BASE_URL } from "@/constants/config";
 import { UsersApi } from "@/features/users/api/users";
 import type {
@@ -36,7 +36,8 @@ export const http = new AuthHttpClient(refreshCall);
 export const AuthService = {
   async login(payload: AuthenticationRequest) {
     // Step 1: Authenticate and get tokens
-    const data = await http.request<
+    // Use simpleHttp to send session cookie for cart sync
+    const data = await simpleHttp.request<
       { result?: AuthenticationResponse } | AuthenticationResponse
     >("/auth/token", { method: "POST", body: payload });
     const response: AuthenticationResponse =

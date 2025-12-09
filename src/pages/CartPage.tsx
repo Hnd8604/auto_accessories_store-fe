@@ -1,17 +1,29 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, X, ShoppingCart, ArrowLeft } from "lucide-react";
+import { Minus, Plus, X, ShoppingCart, ArrowLeft, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { useState, useEffect } from "react";
 import { Checkout } from "@/features/cart/components/Checkout";
 import { useNavigate } from "react-router-dom";
-import { ProductImagesApi } from "@/features/products/api";
+import { ProductImagesApi, ProductsApi } from "@/features/products/api";
+import { SessionCartsApi } from "@/features/cart/api/session-carts";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CartPage() {
-  const { cart, itemCount, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { cart, sessionCart, isAuthenticated, itemCount, updateQuantity, removeFromCart, clearCart } = useCart();
+  const queryClient = useQueryClient();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [productImages, setProductImages] = useState<Record<number, string>>({});
+  const [sessionProducts, setSessionProducts] = useState<Array<{
+    id: number;
+    productId: number;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    imageUrl?: string;
+  }>>([]);
   const navigate = useNavigate();
 
   const formatPrice = (price: number) => {
@@ -22,12 +34,57 @@ export default function CartPage() {
   };
 
   const cartItems = cart?.items || [];
-  const totalPrice = cart?.totalPrice || 0;
+  const totalPrice = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
 
-  // Fetch product images when cart items change
+  // Fetch session cart products for guest users
+  useEffect(() => {
+    const fetchSessionProducts = async () => {
+      if (isAuthenticated || Object.keys(sessionCart).length === 0) {
+        setSessionProducts([]);
+        return;
+      }
+
+      const products = await Promise.all(
+        Object.entries(sessionCart).map(async ([productIdStr, quantity]) => {
+          try {
+            const productId = Number.parseInt(productIdStr, 10);
+            const productResponse = await ProductsApi.getById(productId);
+            const product = productResponse?.result;
+
+            if (product) {
+              // Fetch product image
+              const imageResponse = await ProductImagesApi.getByProductId(productId);
+              const images = imageResponse?.result || [];
+              const primaryImage = images.find(img => img.isPrimary);
+
+              return {
+                id: productId,
+                productId,
+                productName: product.name,
+                quantity: Number(quantity),
+                unitPrice: product.unitPrice,
+                totalPrice: product.unitPrice * Number(quantity),
+                imageUrl: primaryImage?.imageUrl,
+              };
+            }
+            return null;
+          } catch (error) {
+            console.error(`Failed to fetch product ${productIdStr}:`, error);
+            return null;
+          }
+        })
+      );
+
+      setSessionProducts(products.filter(p => p !== null));
+    };
+
+    fetchSessionProducts();
+  }, [sessionCart, isAuthenticated]);
+
+  // Fetch product images for logged-in user cart
   useEffect(() => {
     const fetchImages = async () => {
-      if (cartItems.length === 0) return;
+      if (!isAuthenticated || cartItems.length === 0) return;
       
       const images: Record<number, string> = {};
       await Promise.all(
@@ -48,7 +105,7 @@ export default function CartPage() {
     };
     
     fetchImages();
-  }, [cartItems.length]);
+  }, [cartItems.length, isAuthenticated]);
 
   const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
     if (newQuantity === 0) {
@@ -60,6 +117,37 @@ export default function CartPage() {
 
   const handleRemoveItem = async (itemId: number) => {
     await removeFromCart(itemId);
+  };
+
+  // Session cart handlers
+  const handleSessionUpdateQuantity = async (productId: number, newQuantity: number) => {
+    try {
+      if (newQuantity === 0) {
+        await SessionCartsApi.remove(productId);
+      } else {
+        // Calculate delta: difference between new and current quantity
+        const currentQuantity = sessionCart[productId] || 0;
+        const delta = newQuantity - currentQuantity;
+        
+        if (delta !== 0) {
+          await SessionCartsApi.add(productId, delta);
+        }
+      }
+      // Refetch session cart to update UI
+      await queryClient.invalidateQueries({ queryKey: ["sessionCart"] });
+    } catch (error) {
+      console.error("Failed to update session cart:", error);
+    }
+  };
+
+  const handleSessionRemoveItem = async (productId: number) => {
+    try {
+      await SessionCartsApi.remove(productId);
+      // Refetch session cart to update UI
+      await queryClient.invalidateQueries({ queryKey: ["sessionCart"] });
+    } catch (error) {
+      console.error("Failed to remove from session cart:", error);
+    }
   };
 
   const handleOrderComplete = () => {
@@ -90,7 +178,133 @@ export default function CartPage() {
           </div>
         </div>
 
-        {cartItems.length === 0 ? (
+        {/* Guest User with Session Cart */}
+        {!isAuthenticated && sessionProducts.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Session Cart Items Section */}
+            <div className="lg:col-span-2 space-y-4">
+              {sessionProducts.map((item) => (
+                <Card key={item.id} className="p-6">
+                  <div className="flex gap-6">
+                    {/* Product Image */}
+                    <div className="relative w-32 h-32 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.productName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Product Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold mb-2 line-clamp-2">
+                            {item.productName}
+                          </h3>
+                          <p className="text-primary font-medium text-lg">
+                            {item.unitPrice.toLocaleString('vi-VN')} ₫
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleSessionRemoveItem(item.productId)}
+                        >
+                          <Trash2 className="h-5 w-5 text-destructive" />
+                        </Button>
+                      </div>
+
+                      {/* Quantity Controls */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleSessionUpdateQuantity(item.productId, item.quantity - 1)}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="w-12 text-center font-medium">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleSessionUpdateQuantity(item.productId, item.quantity + 1)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="text-right flex-1">
+                          <p className="text-sm text-muted-foreground">Tổng giá</p>
+                          <p className="text-lg font-semibold text-primary">
+                            {item.totalPrice.toLocaleString('vi-VN')} ₫
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Order Summary Section for Session Cart */}
+            <div className="lg:col-span-1">
+              <Card className="p-6 sticky top-8">
+                <h2 className="text-xl font-semibold mb-6">Thông Tin Đơn Hàng</h2>
+                
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Số sản phẩm</span>
+                    <span className="font-medium">{itemCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tạm tính</span>
+                    <span className="font-medium">
+                      {sessionProducts.reduce((sum, item) => sum + item.totalPrice, 0).toLocaleString('vi-VN')} ₫
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Phí vận chuyển</span>
+                    <span className="font-medium">Miễn phí</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-lg">
+                    <span className="font-semibold">Tổng cộng</span>
+                    <span className="font-bold text-primary">
+                      {sessionProducts.reduce((sum, item) => sum + item.totalPrice, 0).toLocaleString('vi-VN')} ₫
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Button 
+                    variant="luxury" 
+                    className="w-full"
+                    onClick={() => navigate('/auth')}
+                  >
+                    Đăng Nhập Để Thanh Toán
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigate('/')}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Tiếp Tục Mua Sắm
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+        ) : cartItems.length === 0 ? (
           /* Empty Cart State */
           <Card className="p-12">
             <div className="text-center">

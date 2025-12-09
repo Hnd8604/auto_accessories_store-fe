@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,6 +64,7 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login: authLogin } = useAuth();
+  const queryClient = useQueryClient();
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -91,6 +92,9 @@ const AuthPage = () => {
     onSuccess: (data) => {
       // Update auth context with complete user data (including roles)
       authLogin(data.user, data.accessToken, data.refreshToken);
+
+      // Invalidate cart query to refetch merged cart data from backend
+      queryClient.invalidateQueries({ queryKey: ["cart", data.user.id] });
 
       toast({
         title: "Đăng nhập thành công!",

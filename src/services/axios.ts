@@ -175,6 +175,7 @@ class SimpleHttpClient {
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true, // Enable sending cookies for session cart management
     });
   }
 
