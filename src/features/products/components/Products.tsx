@@ -5,46 +5,79 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Eye, Heart, Star, Loader2 } from "lucide-react";
 import { ProductsApi, ProductImagesApi } from "@/features/products/api";
-import { CategoriesApi } from "@/features/categories/api/categories";
-import type { ProductResponse } from "@/features/products/types";
+import type { ProductResponse, ProductSearchRequest } from "@/features/products/types";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/cart-context";
 
 interface ProductsProps {
   limit?: number;
+  searchParams?: ProductSearchRequest;
+  sortBy?: string;
 }
 
-export const Products = ({ limit = 6 }: ProductsProps) => {
+export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: ProductsProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const [selectedCategory, setSelectedCategory] = useState<string>("Tất Cả");
   const [productsWithImages, setProductsWithImages] = useState<ProductResponse[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
 
-  // Fetch products
+  // Determine if we need to use search API or regular getAll
+  const hasSearchParams = searchParams && (
+    searchParams.keyword || 
+    searchParams.category || 
+    searchParams.brand || 
+    searchParams.minPrice !== undefined || 
+    searchParams.maxPrice !== undefined || 
+    searchParams.inStock
+  );
+
+  // Fetch products - use search if params exist
   const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ["products", { page: 0, size: 20 }],
-    queryFn: () => ProductsApi.getAll({ page: 0, size: 20 }),
+    queryKey: ["products", searchParams, { page: 0, size: limit || 100 }],
+    queryFn: () => {
+      if (hasSearchParams) {
+        return ProductsApi.search(searchParams, { page: 0, size: limit || 100 });
+      }
+      return ProductsApi.getAll({ page: 0, size: limit || 100 });
+    },
+    staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+    cacheTime: 10 * 60 * 1000, // Cache for 10 minutes
   });
 
-  // Fetch categories
-  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: CategoriesApi.getAll,
-  });
+  let products = productsData?.result?.content || [];
 
-  const products = productsData?.result?.content || [];
-  const categories = ["Tất Cả", ...(categoriesData?.result?.map(c => c.name) || [])];
+  // Apply client-side sorting
+  if (sortBy && products.length > 0) {
+    products = [...products].sort((a, b) => {
+      switch (sortBy) {
+        case "price-low":
+          return a.unitPrice - b.unitPrice;
+        case "price-high":
+          return b.unitPrice - a.unitPrice;
+        case "newest":
+          return b.id - a.id;
+        case "rating":
+          // If you have rating field, sort by it
+          return 0;
+        default:
+          return 0;
+      }
+    });
+  }
 
-  // Filter products first, THEN fetch images only for displayed products
-  const filteredProducts = selectedCategory === "Tất Cả" 
-    ? products.slice(0, limit)
-    : products.filter(product => product.categoryName === selectedCategory).slice(0, limit);
+  // Apply limit if specified
+  const filteredProducts = limit ? products.slice(0, limit) : products;
 
   // Fetch images ONLY for filtered/displayed products
   useEffect(() => {
+    let isCancelled = false;
+
     if (filteredProducts.length > 0) {
-      setLoadingImages(true);
+      // Don't set loading immediately to avoid flicker
+      const loadingTimer = setTimeout(() => {
+        if (!isCancelled) setLoadingImages(true);
+      }, 100);
+
       Promise.all(
         filteredProducts.map(async (product) => {
           try {
@@ -63,19 +96,30 @@ export const Products = ({ limit = 6 }: ProductsProps) => {
         })
       )
         .then(productsWithImgs => {
-          setProductsWithImages(productsWithImgs);
-          setLoadingImages(false);
+          if (!isCancelled) {
+            clearTimeout(loadingTimer);
+            setProductsWithImages(productsWithImgs);
+            setLoadingImages(false);
+          }
         })
         .catch(error => {
-          console.error('Failed to fetch product images:', error);
-          setProductsWithImages(filteredProducts);
-          setLoadingImages(false);
+          if (!isCancelled) {
+            clearTimeout(loadingTimer);
+            console.error('Failed to fetch product images:', error);
+            setProductsWithImages(filteredProducts);
+            setLoadingImages(false);
+          }
         });
+
+      return () => {
+        isCancelled = true;
+        clearTimeout(loadingTimer);
+      };
     } else {
       setProductsWithImages([]);
       setLoadingImages(false);
     }
-  }, [filteredProducts.map(p => p.id).join(','), selectedCategory]);
+  }, [filteredProducts.length, filteredProducts.map(p => p.id).join(',')]);
 
   const displayProducts = productsWithImages.length > 0 ? productsWithImages : filteredProducts;
 
@@ -101,12 +145,26 @@ export const Products = ({ limit = 6 }: ProductsProps) => {
     navigate(`/products/${slug}`);
   };
 
-  if (productsLoading || categoriesLoading) {
+  // Skeleton loader component
+  const ProductSkeleton = () => (
+    <Card className="overflow-hidden animate-pulse">
+      <div className="aspect-square bg-muted" />
+      <CardContent className="p-4 space-y-2">
+        <div className="h-4 bg-muted rounded w-3/4" />
+        <div className="h-4 bg-muted rounded w-1/2" />
+        <div className="h-8 bg-muted rounded w-full mt-4" />
+      </CardContent>
+    </Card>
+  );
+
+  if (productsLoading) {
     return (
-      <section className="py-20 bg-muted/20">
+      <section className="py-12 bg-muted/20">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {Array.from({ length: limit || 8 }).map((_, i) => (
+              <ProductSkeleton key={i} />
+            ))}
           </div>
         </div>
       </section>
@@ -116,38 +174,10 @@ export const Products = ({ limit = 6 }: ProductsProps) => {
   return (
     <section className="py-12 bg-muted/20">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Sản Phẩm 
-            <span className="bg-gradient-accent bg-clip-text text-transparent"> Nổi Bật</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-6">
-            Khám phá bộ sưu tập sản phẩm nội thất ô tô cao cấp với chất lượng tốt nhất 
-            và giá cả cạnh tranh nhất thị trường.
-          </p>
-
-          {/* Category Filter */}
-          <div className="flex flex-wrap justify-center gap-2">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                onClick={() => setSelectedCategory(category)}
-                className="transition-all duration-300"
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
-        </div>
 
         {/* Products Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {loadingImages ? (
-            <div className="col-span-full flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : displayProducts.length === 0 ? (
+          {displayProducts.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-lg text-muted-foreground">Không có sản phẩm nào</p>
             </div>
