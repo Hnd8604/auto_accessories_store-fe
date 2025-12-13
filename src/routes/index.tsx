@@ -12,6 +12,8 @@ import NotFound from "@/pages/NotFound";
 import AuthPage from "@/features/auth/pages/AuthPage";
 import ProductsPage from "@/features/products/pages/ProductsPage";
 import OrderPage from "@/features/orders/pages/OrderPage";
+import PostDetailPage from "@/features/posts/pages/PostDetailPage";
+import PostEditorPage from "@/features/posts/pages/PostEditorPage";
 
 export const AppRoutes = () => {
   return (
@@ -21,12 +23,29 @@ export const AppRoutes = () => {
       <Route path="/cart" element={<CartPage />} />
       <Route path="/order" element={<OrderPage />} />
       <Route path="/blog" element={<BlogPage />} />
+      <Route path="/blog/:slug" element={<PostDetailPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route
         path="/admin"
         element={
           <ProtectedRoute requireAuth requireAdmin>
             <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/posts/new"
+        element={
+          <ProtectedRoute requireAuth requireAdmin>
+            <PostEditorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/posts/edit/:id"
+        element={
+          <ProtectedRoute requireAuth requireAdmin>
+            <PostEditorPage />
           </ProtectedRoute>
         }
       />

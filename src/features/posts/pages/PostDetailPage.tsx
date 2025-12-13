@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Calendar, Eye, User } from "lucide-react";
 import { useMemo } from "react";
+import { renderContent } from "@/utils/contentRenderer";
 
 const PageLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-background">
@@ -73,7 +74,19 @@ export const PostDetailPage = () => {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["post", slug],
-    queryFn: () => PostsApi.getBySlug(slug!),
+    queryFn: async () => {
+      // Fetch post data by slug
+      const response = await PostsApi.getBySlug(slug!);
+      // Increment view count after getting post
+      if (response?.result?.id) {
+        try {
+          await PostsApi.incrementViewCount(response.result.id);
+        } catch (err) {
+          console.error('Failed to increment view count:', err);
+        }
+      }
+      return response;
+    },
     enabled: !!slug,
   });
 
@@ -128,11 +141,19 @@ export const PostDetailPage = () => {
           )}
 
           <div
-            className="prose prose-lg max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            className="prose prose-lg max-w-none dark:prose-invert 
+                       prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:mx-auto
+                       prose-video:rounded-lg prose-video:mx-auto prose-video:my-6 prose-video:w-full
+                       [&_iframe]:w-full [&_iframe]:my-6 [&_iframe]:rounded-lg [&_iframe]:aspect-video [&_iframe]:h-auto
+                       [&_.image-wrapper]:text-center [&_.image-wrapper]:my-6
+                       [&_.image-caption]:text-center [&_.image-caption]:text-sm [&_.image-caption]:text-gray-500 
+                       [&_.image-caption]:mt-2 [&_.image-caption]:italic [&_.image-caption]:mb-6"
+            dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
           />
         </article>
       </div>
     </PageLayout>
   );
 };
+
+export default PostDetailPage;

@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ import type { PostResponse } from "@/features/posts/types";
 
 export const Blog = memo(() => {
   const [selectedCategory, setSelectedCategory] = useState("Tất Cả");
-  const [selectedPost, setSelectedPost] = useState<PostResponse | null>(null);
+  const navigate = useNavigate();
 
   // Fetch published posts
   const { data: postsData, isLoading: postsLoading } = useQuery({
@@ -47,15 +48,9 @@ export const Blog = memo(() => {
     });
   }, []);
 
-  const handlePostClick = useCallback(async (post: PostResponse) => {
-    setSelectedPost(post);
-    // Increment view count
-    try {
-      await PostsApi.incrementViewCount(post.id);
-    } catch (error) {
-      console.error('Failed to increment view count:', error);
-    }
-  }, []);
+  const handlePostClick = useCallback((slug: string) => {
+    navigate(`/blog/${slug}`);
+  }, [navigate]);
 
   if (postsLoading || categoriesLoading) {
     return (
@@ -63,71 +58,6 @@ export const Blog = memo(() => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center min-h-[400px]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (selectedPost) {
-    return (
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <Button 
-              variant="ghost" 
-              onClick={() => setSelectedPost(null)}
-              className="mb-8"
-            >
-              ← Quay lại Blog
-            </Button>
-            
-            <article className="bg-card rounded-lg overflow-hidden shadow-card">
-              {selectedPost.thumbnailUrl && (
-                <img
-                  src={selectedPost.thumbnailUrl}
-                  alt={selectedPost.title}
-                  className="w-full h-96 object-cover"
-                />
-              )}
-              
-              <div className="p-8">
-                <div className="flex items-center gap-4 mb-6 flex-wrap">
-                  {selectedPost.categoryName && (
-                    <Badge variant="secondary">{selectedPost.categoryName}</Badge>
-                  )}
-                  {selectedPost.createdAt && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatDate(selectedPost.createdAt)}</span>
-                    </div>
-                  )}
-                  {selectedPost.authorName && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <User className="h-4 w-4" />
-                      <span>{selectedPost.authorName}</span>
-                    </div>
-                  )}
-                  {selectedPost.viewCount !== undefined && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Eye className="h-4 w-4" />
-                      <span>{selectedPost.viewCount} lượt xem</span>
-                    </div>
-                  )}
-                </div>
-                
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                  {selectedPost.title}
-                </h1>
-                
-                <div className="prose prose-lg max-w-none text-muted-foreground">
-                  {selectedPost.shortDescription && (
-                    <p className="text-xl mb-6">{selectedPost.shortDescription}</p>
-                  )}
-                  <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
-                </div>
-              </div>
-            </article>
           </div>
         </div>
       </section>
@@ -173,7 +103,7 @@ export const Blog = memo(() => {
               <Card 
                 key={post.id} 
                 className="group bg-card border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-card hover:-translate-y-2 cursor-pointer overflow-hidden"
-                onClick={() => handlePostClick(post)}
+                onClick={() => handlePostClick(post.slug)}
               >
                 <div className="relative overflow-hidden">
                   {post.thumbnailUrl ? (
@@ -242,7 +172,7 @@ export const Blog = memo(() => {
         )}
 
         <div className="text-center mt-12">
-          <Button variant="luxury" size="xl">
+          <Button variant="luxury" size="xl" onClick={() => navigate("/blog")}>
             Xem Tất Cả Bài Viết
           </Button>
         </div>

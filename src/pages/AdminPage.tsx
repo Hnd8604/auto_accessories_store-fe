@@ -710,7 +710,7 @@ const AdminPage = () => {
 
           {/* Posts Tab */}
           {activeTab === "posts" && (
-            <PostManagement categoryOptions={postCategoryOptions} />
+            <PostManagement />
           )}
 
           {/* Post Categories Tab */}
