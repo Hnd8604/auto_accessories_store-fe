@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Markdown</title>
+    <script type="module">
+        import { marked } from 'https://cdn.jsdelivr.net/npm/marked@11.0.0/+esm';
+        
+        window.onload = () => {
+            const testContent = `# Heading 1
+## Heading 2
+This is **bold** and this is *italic*.
+
+1. First item
+2. Second item
+3. Third item
+
+- Bullet 1
+- Bullet 2`;
+            
+            const html = marked.parse(testContent);
+            document.getElementById('output').innerHTML = html;
+            document.getElementById('raw').textContent = html;
+        };
+    </script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        #output { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; }
+        #raw { background: #f5f5f5; padding: 10px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Markdown Test</h1>
+        <h2>Rendered Output:</h2>
+        <div id="output"></div>
+        <h2>Raw HTML:</h2>
+        <pre id="raw"></pre>
+    </div>
+</body>
+</html>

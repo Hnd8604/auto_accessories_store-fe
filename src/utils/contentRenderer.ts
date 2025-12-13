@@ -2,14 +2,27 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 
 export const renderContent = (content: string): string => {
+  if (!content || content.trim() === '') {
+    return '';
+  }
+
   // Configure marked options
   marked.setOptions({
     breaks: true,
     gfm: true,
+    mangle: false,
+    headerIds: true,
+    pedantic: false,
   });
 
-  // Convert Markdown to HTML
-  let htmlContent = marked.parse(content) as string;
+  // Convert Markdown to HTML - marked.parse is synchronous by default
+  let htmlContent: string;
+  try {
+    htmlContent = marked.parse(content) as string;
+  } catch (error) {
+    console.error('Error parsing markdown:', error);
+    return `<p>${content}</p>`;
+  }
   
   // Post-process: Find images followed by emphasized text (caption)
   // Pattern: <p><img ... />(<br>)?<em>caption text</em></p>
@@ -29,14 +42,17 @@ export const renderContent = (content: string): string => {
       'blockquote', 'code', 'pre',
       'a', 'img', 'iframe', 'video', 'source',
       'table', 'thead', 'tbody', 'tr', 'th', 'td',
-      'div', 'span'
+      'div', 'span', 'hr'
     ],
     ALLOWED_ATTR: [
       'href', 'src', 'alt', 'title', 'class', 'style',
       'width', 'height', 'controls', 'autoplay', 'loop',
       'allow', 'allowfullscreen', 'frameborder', 'scrolling',
-      'type', 'target', 'rel'
+      'type', 'target', 'rel', 'id'
     ],
+    KEEP_CONTENT: true,
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false,
   });
   
   return cleanHtml;
