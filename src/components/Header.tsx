@@ -16,8 +16,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SearchBar } from "@/components/SearchBar";
 
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 
 const CartButton = memo(() => {
   const { itemCount } = useCart();
@@ -54,6 +55,33 @@ export const Header = memo(() => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Handle scroll to show/hide header
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Show header when at top
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+      } 
+      // Hide header when scrolling down
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      } 
+      // Show header when scrolling up
+      else if (currentScrollY < lastScrollY) {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -100,71 +128,35 @@ export const Header = memo(() => {
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+    <header className={`fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border transition-transform duration-300 ${
+      isVisible ? 'translate-y-0' : '-translate-y-full'
+    }`}>
+      <div className="container mx-auto px-4">
+        {/* Row 1: Logo, Search, User Actions */}
+        <div className="flex items-center justify-between gap-4 py-3 border-b border-border/50">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Car className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-accent bg-clip-text text-transparent">
+            <span className="text-xl md:text-2xl font-bold bg-gradient-accent bg-clip-text text-transparent whitespace-nowrap">
               AutoLux Interior
             </span>
           </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <a
-              href="/"
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              Trang Chủ
-            </a>
-            <a
-              href="/products"
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              Sản Phẩm
-            </a>
-            <a
-              href="/order"
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              Đặt Hàng
-            </a>
-            <a
-              href="#services"
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              Dịch Vụ
-            </a>
-            <a
-              href="#gallery"
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              Thư Viện
-            </a>
-            <a
-              href="/blog"
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              Blog
-            </a>
-            <a
-              href="#contact"
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              Liên Hệ
-            </a>
-          </nav>
+          {/* Search Bar */}
+          <div className="flex-1 max-w-xl">
+            <SearchBar />
+          </div>
 
-          {/* Contact Buttons */}
-          <div className="flex items-center gap-4">
-            <div className="hidden lg:flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">0123 456 789</span>
-              </div>
-            </div>
+          {/* Right Actions */}
+          <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+            {/* Phone */}
+            <a 
+              href="tel:0123456789" 
+              className="hidden lg:flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Phone className="h-4 w-4" />
+              <span>0123 456 789</span>
+            </a>
 
             {/* User Authentication */}
             {isAuthenticated ? (
@@ -222,10 +214,52 @@ export const Header = memo(() => {
             )}
 
             <CartButton />
-            <Button variant="luxury" size="sm">
+            <Button variant="luxury" size="sm" className="hidden lg:inline-flex">
               Tư Vấn Miễn Phí
             </Button>
           </div>
+        </div>
+
+        {/* Row 2: Navigation Menu */}
+        <div className="py-3">
+          <nav className="hidden md:flex items-center justify-center gap-8">
+            <a
+              href="/"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              Trang Chủ
+            </a>
+            <a
+              href="/products"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              Sản Phẩm
+            </a>
+            <a
+              href="/order"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              Đặt Hàng
+            </a>
+            <a
+              href="#services"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              Dịch Vụ
+            </a>
+            <a
+              href="/blog"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              Blog
+            </a>
+            <a
+              href="#contact"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              Liên Hệ
+            </a>
+          </nav>
         </div>
       </div>
     </header>
