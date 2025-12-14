@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Eye, Heart, Star, Loader2 } from "lucide-react";
 import { ProductsApi, ProductImagesApi } from "@/features/products/api";
+import { CategoriesApi } from "@/features/categories/api/categories";
 import type { ProductResponse, ProductSearchRequest } from "@/features/products/types";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/cart-context";
@@ -13,13 +14,23 @@ interface ProductsProps {
   limit?: number;
   searchParams?: ProductSearchRequest;
   sortBy?: string;
+  showHeader?: boolean;
 }
 
-export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: ProductsProps) => {
+export const Products = ({ limit, searchParams = {}, sortBy = "featured", showHeader = true }: ProductsProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [productsWithImages, setProductsWithImages] = useState<ProductResponse[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("Tất Cả");
+
+  // Fetch categories for tabs
+  const { data: categoriesData } = useQuery({
+    queryKey: ["categories"],
+    queryFn: CategoriesApi.getAll,
+  });
+
+  const categories = ["Tất Cả", ...(categoriesData?.result?.map(c => c.name) || [])];
 
   // Determine if we need to use search API or regular getAll
   const hasSearchParams = searchParams && (
@@ -31,17 +42,33 @@ export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: Prod
     searchParams.inStock
   );
 
+  // Merge category filter with searchParams
+  const mergedSearchParams = {
+    ...searchParams,
+    ...(selectedCategory !== "Tất Cả" && { category: selectedCategory }),
+  };
+
+  const hasEffectiveSearchParams = mergedSearchParams && (
+    mergedSearchParams.keyword || 
+    mergedSearchParams.category || 
+    mergedSearchParams.brand || 
+    mergedSearchParams.minPrice !== undefined || 
+    mergedSearchParams.maxPrice !== undefined || 
+    mergedSearchParams.inStock
+  );
+
   // Fetch products - use search if params exist
-  const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ["products", searchParams, { page: 0, size: limit || 100 }],
+  const { data: productsData, isLoading: productsLoading, isFetching } = useQuery({
+    queryKey: ["products", mergedSearchParams, selectedCategory, { page: 0, size: limit || 100 }],
     queryFn: () => {
-      if (hasSearchParams) {
-        return ProductsApi.search(searchParams, { page: 0, size: limit || 100 });
+      if (hasEffectiveSearchParams) {
+        return ProductsApi.search(mergedSearchParams, { page: 0, size: limit || 100 });
       }
       return ProductsApi.getAll({ page: 0, size: limit || 100 });
     },
     staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
     cacheTime: 10 * 60 * 1000, // Cache for 10 minutes
+    keepPreviousData: true, // Keep previous data while fetching new data
   });
 
   let products = productsData?.result?.content || [];
@@ -157,7 +184,10 @@ export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: Prod
     </Card>
   );
 
-  if (productsLoading) {
+  // Only show skeleton on initial load when there's no data at all
+  const isInitialLoading = productsLoading && !productsData;
+
+  if (isInitialLoading) {
     return (
       <section className="py-12 bg-muted/20">
         <div className="container mx-auto px-4">
@@ -174,10 +204,48 @@ export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: Prod
   return (
     <section className="py-12 bg-muted/20">
       <div className="container mx-auto px-4">
+        {showHeader && (
+          <div className="text-center max-w-3xl mx-auto mb-12 space-y-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+              Sản Phẩm Nội Thất Ô Tô
+            </h2>
+            {/* <p className="text-lg text-muted-foreground">
+              Khám phá bộ sưu tập phụ kiện và nội thất ô tô cao cấp từ các thương hiệu hàng đầu
+            </p> */}
+
+            {/* Category Filter */}
+            <div className="flex flex-wrap justify-center gap-4">
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(category)}
+                  className="transition-all duration-300"
+                  disabled={isFetching && !productsLoading}
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
+            
+            {/* Loading indicator when refetching */}
+            {isFetching && !productsLoading && (
+              <div className="flex justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {displayProducts.length === 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 relative">
+          {/* Overlay loading indicator when switching categories */}
+          {isFetching && displayProducts.length > 0 && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
+          {displayProducts.length === 0 && !isFetching ? (
             <div className="col-span-full text-center py-12">
               <p className="text-lg text-muted-foreground">Không có sản phẩm nào</p>
             </div>
@@ -200,26 +268,13 @@ export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: Prod
                     }}
                   />
                 </div>
-                  
-                  {/* Badges */}
-                  <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    {product.stockQuantity > 0 ? (
-                      <Badge variant="secondary" className="bg-green-500/90 text-white text-xs">
-                        Còn hàng
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive" className="text-xs">
-                        Hết hàng
-                      </Badge>
-                    )}
-                  </div>
 
                   {/* Action Buttons */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-1">
+                  <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-0.5">
                     <Button 
                       variant="secondary" 
                       size="icon" 
-                      className="bg-background/90 hover:bg-background h-8 w-8"
+                      className="bg-background/90 hover:bg-background h-7 w-7"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleViewProduct(product.slug);
@@ -231,7 +286,7 @@ export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: Prod
 
                 </div>
 
-                <CardHeader className="p-3 pb-2">-2">
+                <CardHeader className="p-3 pb-2">
                   <div className="flex items-center gap-1 mb-1.5">
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                       {product.categoryName}
@@ -243,9 +298,6 @@ export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: Prod
                   <CardTitle className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
                     {product.name}
                   </CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                    {product.description || "Sản phẩm chất lượng cao"}
-                  </CardDescription>
                 </CardHeader>
 
                 <CardContent className="p-3 pt-0 space-y-2">
@@ -262,7 +314,7 @@ export const Products = ({ limit, searchParams = {}, sortBy = "featured" }: Prod
                     className="w-full h-8 text-xs"
                     disabled={product.stockQuantity === 0}
                   >
-                    <ShoppingCart className="h-3 w-3 mr-1" />
+                    <ShoppingCart className="h-3 w-3 mr-0.5" />
                     Thêm Vào Giỏ
                   </Button>
                 </CardContent>

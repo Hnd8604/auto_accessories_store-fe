@@ -11,6 +11,7 @@ import NotFound from "@/pages/NotFound";
 // Feature Pages
 import AuthPage from "@/features/auth/pages/AuthPage";
 import ProductsPage from "@/features/products/pages/ProductsPage";
+import ProductDetailPage from "@/features/products/pages/ProductDetailPage";
 import OrderPage from "@/features/orders/pages/OrderPage";
 import PostDetailPage from "@/features/posts/pages/PostDetailPage";
 import PostEditorPage from "@/features/posts/pages/PostEditorPage";
@@ -20,6 +21,7 @@ export const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/products" element={<ProductsPage />} />
+      <Route path="/products/:slug" element={<ProductDetailPage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/order" element={<OrderPage />} />
       <Route path="/blog" element={<BlogPage />} />

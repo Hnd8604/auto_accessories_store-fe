@@ -62,11 +62,11 @@ export const HeroSlider = memo(() => {
   }, [api]);
 
   return (
-    <section className="relative min-h-[80vh] md:min-h-[90vh]">
+    <section className="relative pt-[140px] min-h-[60vh] md:min-h-[70vh]">
       <Carousel setApi={setApi} opts={{ loop: true }} className="h-full">
         <CarouselContent className="h-full">
           {slides.map((s, idx) => (
-            <CarouselItem key={idx} className="h-[80vh] md:h-[90vh]">
+            <CarouselItem key={idx} className="h-[60vh] md:h-[70vh]">
               <div className="relative w-full h-full">
                 <img
                   src={s.image}

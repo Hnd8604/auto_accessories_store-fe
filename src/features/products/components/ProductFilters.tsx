@@ -119,7 +119,7 @@ export const ProductFilters = ({ onSearch, onSort }: ProductFiltersProps) => {
   };
 
   return (
-    <div className="bg-card border-b border-border/50 py-4">
+    <div className="bg-card border-b border-border/50 py-6 mt-4">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
           {/* Search */}
@@ -158,26 +158,6 @@ export const ProductFilters = ({ onSearch, onSort }: ProductFiltersProps) => {
                 <SelectItem value="newest">Mới nhất</SelectItem>
               </SelectContent>
             </Select>
-
-            {/* View Mode */}
-            <div className="flex border border-border rounded-md">
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className="rounded-r-none"
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="rounded-l-none"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
 
             {/* Mobile Filter Toggle */}
             <Sheet>
