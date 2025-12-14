@@ -19,7 +19,6 @@ export interface PostResponse {
 export interface PostRequest {
   title: string;
   shortDescription?: string;
-  thumbnailUrl?: string;
   content: string;
   published: boolean;
   categoryId: number;

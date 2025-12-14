@@ -38,14 +38,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { ContentPreview } from "@/components/shared/ContentPreview";
-import { ArrowLeft, Loader2, Eye, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, Save, Upload, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Validation schema
 const postSchema = z.object({
   title: z.string().min(1, "Tiêu đề là bắt buộc"),
   shortDescription: z.string().optional(),
-  thumbnailUrl: z.string().url("URL không hợp lệ").optional().or(z.literal("")),
   content: z.string().min(1, "Nội dung là bắt buộc"),
   published: z.boolean(),
   categoryId: z.number({
@@ -61,6 +60,9 @@ export const PostEditorPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [dragActive, setDragActive] = useState(false);
   const isEditMode = !!id;
 
   // Form setup
@@ -69,7 +71,6 @@ export const PostEditorPage = () => {
     defaultValues: {
       title: "",
       shortDescription: "",
-      thumbnailUrl: "",
       content: "",
       published: false,
       categoryId: undefined,
@@ -98,17 +99,19 @@ export const PostEditorPage = () => {
       form.reset({
         title: post.title,
         shortDescription: post.shortDescription || "",
-        thumbnailUrl: post.thumbnailUrl || "",
         content: post.content,
         published: post.published,
         categoryId: Number.parseInt(post.categoryName || "0"),
       });
+      if (post.thumbnailUrl) {
+        setPreviewUrl(post.thumbnailUrl);
+      }
     }
   }, [postData, isEditMode, form]);
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (data: PostRequest) => PostsApi.create(data),
+    mutationFn: ({ file, data }: { file: File; data: PostRequest }) => PostsApi.create(file, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast({
@@ -128,8 +131,8 @@ export const PostEditorPage = () => {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: PostRequest }) =>
-      PostsApi.update(id, data),
+    mutationFn: ({ id, file, data }: { id: number; file: File | null; data: PostRequest }) =>
+      PostsApi.update(id, file, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["post", id] });
@@ -148,16 +151,73 @@ export const PostEditorPage = () => {
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (file) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn file hình ảnh",
+        variant: "destructive",
+      });
+    }
+  };
+
   const onSubmit = async (data: PostFormData) => {
+    if (!isEditMode && !selectedFile) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn hình ảnh đại diện",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (isEditMode) {
         await updateMutation.mutateAsync({
           id: Number(id),
+          file: selectedFile,
           data: data as PostRequest,
         });
       } else {
-        await createMutation.mutateAsync(data as PostRequest);
+        await createMutation.mutateAsync({
+          file: selectedFile!,
+          data: data as PostRequest,
+        });
       }
     } finally {
       setIsSubmitting(false);
@@ -243,35 +303,76 @@ export const PostEditorPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="thumbnailUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL ảnh đại diện</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com/image.jpg"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        {field.value && (
-                          <div className="mt-4">
+                  <div>
+                    <FormLabel>Hình ảnh {!isEditMode && "*"}</FormLabel>
+                    <div className="mt-2">
+                      {previewUrl ? (
+                        <div className="space-y-2">
+                          <div className="relative">
                             <img
-                              src={field.value}
+                              src={previewUrl}
                               alt="Preview"
-                              className="w-full max-w-sm rounded-lg border"
-                              onError={(e) => {
-                                e.currentTarget.src = "";
-                                e.currentTarget.alt = "Invalid image URL";
-                              }}
+                              className="max-h-64 w-full object-contain rounded-lg border"
                             />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedFile(null);
+                                setPreviewUrl("");
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </div>
-                        )}
-                      </FormItem>
+                          {selectedFile && (
+                            <p className="text-sm text-muted-foreground">
+                              {selectedFile.name}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center w-full">
+                          <label
+                            htmlFor="post-file-upload"
+                            className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                              dragActive
+                                ? "bg-primary/10 border-primary"
+                                : "bg-muted/50 hover:bg-muted border-border"
+                            }`}
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={handleDrop}
+                          >
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                              <p className="mb-2 text-sm text-muted-foreground">
+                                <span className="font-semibold">Chọn hình ảnh</span> hoặc kéo thả vào đây
+                              </p>
+                              <p className="text-xs text-muted-foreground">PNG, JPG, WEBP</p>
+                            </div>
+                            <Input
+                              id="post-file-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleFileChange}
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                    {isEditMode && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Để trống nếu không muốn thay đổi hình ảnh
+                      </p>
                     )}
-                  />
+                  </div>
                 </CardContent>
               </Card>
 
