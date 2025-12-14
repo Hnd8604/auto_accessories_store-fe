@@ -100,8 +100,12 @@ export const Header = memo(() => {
   }, [logout, queryClient, navigate]);
 
   const getUserInitials = useCallback((user: any) => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    if (user?.fullName) {
+      const names = user.fullName.split(' ');
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return user.fullName[0].toUpperCase();
     }
     if (user?.username) {
       return user.username[0].toUpperCase();
@@ -178,9 +182,7 @@ export const Header = memo(() => {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {user?.firstName && user?.lastName
-                          ? `${user.firstName} ${user.lastName}`
-                          : user?.username}
+                        {user?.fullName || user?.username}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user?.email || user?.username}

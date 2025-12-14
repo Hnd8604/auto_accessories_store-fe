@@ -318,7 +318,6 @@ export const ProductImageManagement = ({
       for (const img of otherPrimaryImages) {
         try {
           await ProductImagesApi.update(img.id, {
-            imageUrl: img.imageUrl,
             altText: img.altText || "",
             isPrimary: false,
             sortOrder: img.sortOrder,
@@ -331,7 +330,6 @@ export const ProductImageManagement = ({
 
     if (editingImage) {
       const updateRequest: ProductImageUpdateRequest = {
-        imageUrl: editingImage.imageUrl, // Keep existing URL for edit
         altText: data.altText || "",
         isPrimary: data.isPrimary,
         sortOrder: data.sortOrder,
@@ -380,7 +378,6 @@ export const ProductImageManagement = ({
     for (const img of otherPrimaryImages) {
       try {
         await ProductImagesApi.update(img.id, {
-          imageUrl: img.imageUrl,
           altText: img.altText || "",
           isPrimary: false,
           sortOrder: img.sortOrder,

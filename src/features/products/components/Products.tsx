@@ -67,8 +67,8 @@ export const Products = ({ limit, searchParams = {}, sortBy = "featured", showHe
       return ProductsApi.getAll({ page: 0, size: limit || 100 });
     },
     staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
-    cacheTime: 10 * 60 * 1000, // Cache for 10 minutes
-    keepPreviousData: true, // Keep previous data while fetching new data
+    gcTime: 10 * 60 * 1000, // Garbage collection time for cache
+    placeholderData: (previousData) => previousData, // Keep previous data while fetching new data
   });
 
   let products = productsData?.result?.content || [];
