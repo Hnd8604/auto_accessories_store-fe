@@ -11,14 +11,12 @@ export interface ProductImageResponse {
 // Product Image Request Types
 export interface ProductImageRequest {
   productId: number;
-  imageUrl: string;
   altText?: string;
   isPrimary: boolean;
   sortOrder: number;
 }
 
 export interface ProductImageUpdateRequest {
-  imageUrl: string;
   altText?: string;
   isPrimary: boolean;
   sortOrder: number;

@@ -1,9 +1,11 @@
 import { useEffect, useState, memo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import hero1 from "@/assets/hero-interior.jpg";
 import hero2 from "@/assets/seats.jpg";
 import hero3 from "@/assets/steering-wheel.jpg";
 import hero4 from "@/assets/dashboard.jpg";
 import { Button } from "@/components/ui/button";
+import { BannersApi } from "@/features/banners/api";
 import {
   Carousel,
   CarouselContent,
@@ -18,9 +20,10 @@ interface Slide {
   title: string;
   desc: string;
   cta: string;
+  redirectUrl?: string;
 }
 
-const slides: Slide[] = [
+const defaultSlides: Slide[] = [
   {
     image: hero1,
     title: "Nâng Tầm Đẳng Cấp Nội Thất Xe Hơi",
@@ -51,6 +54,28 @@ const AUTOPLAY_INTERVAL = 5000;
 
 export const HeroSlider = memo(() => {
   const [api, setApi] = useState<CarouselApi | null>(null);
+
+  // Fetch banners from API
+  const { data: bannersData } = useQuery({
+    queryKey: ["banners"],
+    queryFn: BannersApi.getAll,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Convert banners to slides format and filter active ones
+  const apiSlides: Slide[] = (bannersData?.result || [])
+    .filter(banner => banner.isActive)
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+    .map(banner => ({
+      image: banner.imageUrl,
+      title: banner.title || "AutoLux Interior",
+      desc: banner.altText || "",
+      cta: "Tìm Hiểu Thêm",
+      redirectUrl: banner.redirectUrl,
+    }));
+
+  // Use API banners if available, otherwise use default slides
+  const slides = apiSlides.length > 0 ? apiSlides : defaultSlides;
 
   // Simple autoplay
   useEffect(() => {
@@ -84,7 +109,16 @@ export const HeroSlider = memo(() => {
                       {s.desc}
                     </p>
                     <div className="mt-8 flex gap-4">
-                      <Button variant="hero" size="lg" className="hover-scale">
+                      <Button 
+                        variant="hero" 
+                        size="lg" 
+                        className="hover-scale"
+                        onClick={() => {
+                          if (s.redirectUrl) {
+                            window.location.href = s.redirectUrl;
+                          }
+                        }}
+                      >
                         {s.cta}
                       </Button>
                       <Button

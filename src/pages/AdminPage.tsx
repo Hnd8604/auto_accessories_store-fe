@@ -49,6 +49,7 @@ import { BrandManagement } from "@/features/brands/components/BrandManagement";
 import { UserManagement } from "@/features/users/components/UserManagement";
 import { PostManagement, PostCategoryManagement } from "@/features/posts/components";
 import { OrderManagement } from "@/features/orders/components";
+import { BannerManagement } from "@/features/banners/components";
 import { CategoriesApi } from "@/features/categories/api/categories";
 import { BrandsApi } from "@/features/brands/api/brands";
 import { PostCategoriesApi } from "@/features/posts/api";
@@ -331,6 +332,14 @@ const AdminPage = () => {
           >
             <FileText className="mr-2 h-4 w-4" />
             Thương hiệu
+          </Button>
+          <Button
+            variant={activeTab === "banners" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setActiveTab("banners")}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Banner
           </Button>
           <Button
             variant={activeTab === "posts" ? "secondary" : "ghost"}
@@ -706,6 +715,11 @@ const AdminPage = () => {
               <h2 className="text-2xl font-bold mb-6">Quản lý Thương hiệu</h2>
               <BrandManagement />
             </div>
+          )}
+
+          {/* Banners Tab */}
+          {activeTab === "banners" && (
+            <BannerManagement />
           )}
 
           {/* Posts Tab */}
