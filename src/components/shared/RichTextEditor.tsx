@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { 
@@ -12,7 +12,10 @@ import {
   Code,
   Heading1,
   Heading2,
-  Quote
+  Quote,
+  Upload,
+  Loader2,
+  X
 } from "lucide-react";
 import {
   Dialog,
@@ -25,6 +28,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { CloudinaryApi } from "@/services/cloudinary";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface RichTextEditorProps {
   value: string;
@@ -40,6 +45,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   className,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
@@ -49,7 +56,40 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [videoUrl, setVideoUrl] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [linkText, setLinkText] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>("");
+  const [imageUploadTab, setImageUploadTab] = useState<"upload" | "url">("upload");
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
   const { toast } = useToast();
+
+  // Prevent browser from opening dropped files in a new tab
+  useEffect(() => {
+    const preventDefaults = (e: DragEvent) => {
+      // Check if drop is happening inside our editor
+      const editor = editorRef.current;
+      if (editor && e.target instanceof Node && editor.contains(e.target)) {
+        // Let our handlers manage it
+        return;
+      }
+      
+      // Prevent default for file drops outside editor
+      if (e.dataTransfer?.types.includes('Files')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Prevent browser from opening the file on the document level
+    document.addEventListener('dragover', preventDefaults);
+    document.addEventListener('drop', preventDefaults);
+
+    return () => {
+      document.removeEventListener('dragover', preventDefaults);
+      document.removeEventListener('drop', preventDefaults);
+    };
+  }, []);
 
   const insertText = useCallback((before: string, after: string = "") => {
     const textarea = textareaRef.current;
@@ -191,6 +231,156 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       onChange(newText);
     }
     setTimeout(() => textarea.focus(), 0);
+  };
+
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    if (!CloudinaryApi.isImageFile(file)) {
+      throw new Error("File không phải là ảnh");
+    }
+
+    if (!CloudinaryApi.isValidFileSize(file, 10)) {
+      throw new Error("Kích thước file vượt quá 10MB");
+    }
+
+    setIsUploading(true);
+    setUploadProgress("Đang tải lên Cloudinary...");
+
+    try {
+      const response = await CloudinaryApi.uploadImage(file, "store/posts/content");
+      setUploadProgress("Hoàn tất!");
+      return response.secure_url;
+    } catch (error) {
+      console.error("Cloudinary upload error:", error);
+      throw new Error(
+        error instanceof Error ? error.message : "Không thể tải ảnh lên Cloudinary"
+      );
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setUploadProgress(""), 2000);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (!CloudinaryApi.isImageFile(file)) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Chỉ chấp nhận file ảnh (PNG, JPG, WEBP, GIF)",
+      });
+      return;
+    }
+
+    if (!CloudinaryApi.isValidFileSize(file, 10)) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Kích thước file vượt quá 10MB",
+      });
+      return;
+    }
+
+    // Show preview
+    setSelectedImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Set default alt text from filename
+    if (!imageAlt) {
+      setImageAlt(file.name.split(".")[0] || "image");
+    }
+  };
+
+  const handleUploadAndInsert = async () => {
+    if (!selectedImageFile) return;
+
+    try {
+      const cloudinaryUrl = await uploadImageToCloudinary(selectedImageFile);
+      
+      const altText = imageAlt || selectedImageFile.name.split(".")[0] || "image";
+      let imageMarkdown = `\n![${altText}](${cloudinaryUrl})`;
+      
+      if (imageCaption) {
+        imageMarkdown += `\n*${imageCaption}*`;
+      }
+      imageMarkdown += `\n`;
+      
+      insertText(imageMarkdown);
+      
+      toast({
+        title: "Thành công",
+        description: "Đã tải ảnh lên và chèn vào nội dung",
+      });
+      
+      // Reset states
+      setIsImageDialogOpen(false);
+      setSelectedImageFile(null);
+      setPreviewImageUrl("");
+      setImageUrl("");
+      setImageAlt("");
+      setImageCaption("");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể tải ảnh lên",
+      });
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Check if it's a file being dragged
+    const hasFiles = e.dataTransfer?.types.includes('Files');
+    
+    console.log(`Drag event: ${e.type}, hasFiles:`, hasFiles, 'types:', e.dataTransfer?.types);
+    
+    if (!hasFiles) return;
+    
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragging(true);
+    } else if (e.type === "dragleave") {
+      // Only hide overlay if we're leaving the editor container
+      const rect = editorRef.current?.getBoundingClientRect();
+      if (rect && (
+        e.clientX < rect.left ||
+        e.clientX >= rect.right ||
+        e.clientY < rect.top ||
+        e.clientY >= rect.bottom
+      )) {
+        setIsDragging(false);
+      }
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) {
+      console.log("No files in drop event");
+      return;
+    }
+
+    const file = files[0];
+    console.log("File dropped:", file.name, file.type);
+    
+    handleFileSelect(file);
+    setIsImageDialogOpen(true);
+    setImageUploadTab("upload");
   };
 
   const handleInsertImage = () => {
@@ -389,61 +579,239 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </Button>
       </div>
 
-      {/* Editor */}
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="min-h-[400px] rounded-t-none font-mono text-sm"
-      />
-
-      {/* Image Dialog */}
-      <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Chèn ảnh</DialogTitle>
-            <DialogDescription>
-              Nhập URL của ảnh bạn muốn chèn vào bài viết
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="imageUrl">URL ảnh *</Label>
-              <Input
-                id="imageUrl"
-                placeholder="https://example.com/image.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="imageAlt">Mô tả ảnh (Alt text)</Label>
-              <Input
-                id="imageAlt"
-                placeholder="Mô tả ngắn gọn về ảnh"
-                value={imageAlt}
-                onChange={(e) => setImageAlt(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="imageCaption">Chú thích ảnh (Caption)</Label>
-              <Input
-                id="imageCaption"
-                placeholder="Chú thích hiển thị dưới ảnh"
-                value={imageCaption}
-                onChange={(e) => setImageCaption(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Chú thích sẽ hiển thị ngay dưới ảnh
+      {/* Editor with drag & drop support */}
+      <div 
+        ref={editorRef}
+        className="relative"
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <Textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`min-h-[400px] rounded-t-none font-mono text-sm transition-colors ${
+            isDragging ? "border-red-500 border-2" : ""
+          }`}
+        />
+        
+        {/* Drag & Drop Overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 bg-red-50/90 dark:bg-red-950/30 border-2 border-dashed border-red-500 rounded-b-md flex items-center justify-center z-10 pointer-events-none">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg border-2 border-red-500">
+              <Upload className="h-12 w-12 mx-auto mb-2 text-red-500" />
+              <p className="text-lg font-semibold text-red-600 dark:text-red-400">
+                Thả ảnh vào đây
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Ảnh sẽ được xem trước trước khi tải lên
               </p>
             </div>
           </div>
+        )}
+        
+        {/* Upload Progress Indicator */}
+        {isUploading && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-20">
+            <div className="bg-card p-6 rounded-lg shadow-lg border flex flex-col items-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+              <p className="text-sm font-medium">{uploadProgress}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Image Dialog with Upload/URL tabs */}
+      <Dialog 
+        open={isImageDialogOpen} 
+        onOpenChange={(open) => {
+          setIsImageDialogOpen(open);
+          if (!open) {
+            setImageUploadTab("upload");
+            setImageUrl("");
+            setImageAlt("");
+            setImageCaption("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Chèn ảnh</DialogTitle>
+            <DialogDescription>
+              Tải ảnh lên Cloudinary hoặc nhập URL ảnh có sẵn
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs value={imageUploadTab} onValueChange={(v) => setImageUploadTab(v as "upload" | "url")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload">
+                <Upload className="h-4 w-4 mr-2" />
+                Tải lên
+              </TabsTrigger>
+              <TabsTrigger value="url">
+                <LinkIcon className="h-4 w-4 mr-2" />
+                URL
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="upload" className="space-y-4">
+              {previewImageUrl ? (
+                <>
+                  <div>
+                    <Label>Xem trước</Label>
+                    <div className="mt-2 relative">
+                      <img
+                        src={previewImageUrl}
+                        alt="Preview"
+                        className="max-h-64 w-full object-contain rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setSelectedImageFile(null);
+                          setPreviewImageUrl("");
+                          setImageAlt("");
+                          setImageCaption("");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {selectedImageFile && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {selectedImageFile.name} ({(selectedImageFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="imageAltUpload">Mô tả ảnh (Alt text)</Label>
+                    <Input
+                      id="imageAltUpload"
+                      placeholder="Mô tả ngắn gọn về ảnh"
+                      value={imageAlt}
+                      onChange={(e) => setImageAlt(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="imageCaptionUpload">Chú thích ảnh (Caption)</Label>
+                    <Input
+                      id="imageCaptionUpload"
+                      placeholder="Chú thích hiển thị dưới ảnh"
+                      value={imageCaption}
+                      onChange={(e) => setImageCaption(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Chú thích sẽ hiển thị ngay dưới ảnh
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <Label>Chọn ảnh từ máy tính</Label>
+                  <div className="mt-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileInputChange}
+                      className="hidden"
+                      id="image-file-input"
+                    />
+                    <label
+                      htmlFor="image-file-input"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors hover:bg-muted/50"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                        <p className="mb-2 text-sm text-muted-foreground">
+                          <span className="font-semibold">Nhấp để chọn</span> hoặc kéo thả
+                        </p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG, WEBP, GIF (tối đa 10MB)</p>
+                      </div>
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Ảnh sẽ được xem trước trước khi tải lên Cloudinary
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="url" className="space-y-4">
+              <div>
+                <Label htmlFor="imageUrl">URL ảnh *</Label>
+                <Input
+                  id="imageUrl"
+                  placeholder="https://example.com/image.jpg"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="imageAlt">Mô tả ảnh (Alt text)</Label>
+                <Input
+                  id="imageAlt"
+                  placeholder="Mô tả ngắn gọn về ảnh"
+                  value={imageAlt}
+                  onChange={(e) => setImageAlt(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="imageCaption">Chú thích ảnh (Caption)</Label>
+                <Input
+                  id="imageCaption"
+                  placeholder="Chú thích hiển thị dưới ảnh"
+                  value={imageCaption}
+                  onChange={(e) => setImageCaption(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Chú thích sẽ hiển thị ngay dưới ảnh
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsImageDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsImageDialogOpen(false);
+                setSelectedImageFile(null);
+                setPreviewImageUrl("");
+                setImageUrl("");
+                setImageAlt("");
+                setImageCaption("");
+              }}
+            >
               Hủy
             </Button>
-            <Button onClick={handleInsertImage}>Chèn ảnh</Button>
+            {imageUploadTab === "upload" ? (
+              <Button 
+                onClick={handleUploadAndInsert} 
+                disabled={!selectedImageFile || isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Đang tải lên...
+                  </>
+                ) : (
+                  "Chèn ảnh"
+                )}
+              </Button>
+            ) : (
+              <Button onClick={handleInsertImage} disabled={!imageUrl}>
+                Chèn ảnh
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
