@@ -7,3 +7,5 @@ export type OrderStatus =
   | "CANCELED";
 
 export type PaymentStatus = "UNPAID" | "PAID" | "REFUNDED";
+
+export type PaymentMethod = "COD" | "BANK_TRANSFER";

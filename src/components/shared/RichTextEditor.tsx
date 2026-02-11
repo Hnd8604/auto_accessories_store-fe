@@ -64,32 +64,18 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
   const { toast } = useToast();
 
-  // Prevent browser from opening dropped files in a new tab
+  // Log component mount
   useEffect(() => {
-    const preventDefaults = (e: DragEvent) => {
-      // Check if drop is happening inside our editor
-      const editor = editorRef.current;
-      if (editor && e.target instanceof Node && editor.contains(e.target)) {
-        // Let our handlers manage it
-        return;
-      }
-      
-      // Prevent default for file drops outside editor
-      if (e.dataTransfer?.types.includes('Files')) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-
-    // Prevent browser from opening the file on the document level
-    document.addEventListener('dragover', preventDefaults);
-    document.addEventListener('drop', preventDefaults);
-
+    console.log('✅ RichTextEditor mounted');
     return () => {
-      document.removeEventListener('dragover', preventDefaults);
-      document.removeEventListener('drop', preventDefaults);
+      console.log('❌ RichTextEditor unmounted');
     };
   }, []);
+
+  // Note: We don't add document/window level preventDefault because:
+  // 1. RichTextEditor can be used inside Dialog/Modal
+  // 2. React synthetic events will handle preventDefault on the editor element
+  // 3. Window-level listeners can't reliably detect if drop is on editor when inside modals
 
   const insertText = useCallback((before: string, after: string = "") => {
     const textarea = textareaRef.current;
@@ -261,7 +247,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   const handleFileSelect = (file: File) => {
+    console.log('📂 handleFileSelect called:', file.name);
+    
     if (!CloudinaryApi.isImageFile(file)) {
+      console.log('❌ Not an image file');
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -271,6 +260,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
 
     if (!CloudinaryApi.isValidFileSize(file, 10)) {
+      console.log('❌ File too large');
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -279,10 +269,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       return;
     }
 
+    console.log('✅ File validation passed, creating preview...');
+    
     // Show preview
     setSelectedImageFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
+      console.log('✅ Preview image ready');
       setPreviewImageUrl(reader.result as string);
     };
     reader.readAsDataURL(file);
@@ -338,17 +331,29 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   const handleDrag = (e: React.DragEvent) => {
+    console.log(`🎯 handleDrag called: ${e.type}`, {
+      target: e.target,
+      currentTarget: e.currentTarget,
+      types: Array.from(e.dataTransfer?.types || []),
+      items: e.dataTransfer?.items.length
+    });
+    
     e.preventDefault();
     e.stopPropagation();
     
     // Check if it's a file being dragged
     const hasFiles = e.dataTransfer?.types.includes('Files');
     
-    console.log(`Drag event: ${e.type}, hasFiles:`, hasFiles, 'types:', e.dataTransfer?.types);
+    console.log(`   ├─ hasFiles: ${hasFiles}`);
+    console.log(`   └─ isDragging state: ${isDragging}`);
     
-    if (!hasFiles) return;
+    if (!hasFiles) {
+      console.log('   ⚠️  No files detected, ignoring');
+      return;
+    }
     
     if (e.type === "dragenter" || e.type === "dragover") {
+      console.log('   ✅ Setting isDragging = true');
       setIsDragging(true);
     } else if (e.type === "dragleave") {
       // Only hide overlay if we're leaving the editor container
@@ -359,28 +364,44 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         e.clientY < rect.top ||
         e.clientY >= rect.bottom
       )) {
+        console.log('   ❌ Setting isDragging = false (leaving editor)');
         setIsDragging(false);
+      } else {
+        console.log('   ℹ️  Still inside editor, keeping overlay');
       }
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    console.log('🎯 handleDrop called!', {
+      target: e.target,
+      currentTarget: e.currentTarget,
+      dataTransfer: e.dataTransfer,
+      filesCount: e.dataTransfer?.files?.length
+    });
+    
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
 
     const files = e.dataTransfer?.files;
     if (!files || files.length === 0) {
-      console.log("No files in drop event");
+      console.log("❌ No files in drop event");
       return;
     }
 
     const file = files[0];
-    console.log("File dropped:", file.name, file.type);
+    console.log("✅ File dropped:", {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    });
     
     handleFileSelect(file);
     setIsImageDialogOpen(true);
     setImageUploadTab("upload");
+    console.log('📝 Dialog should be opening now...');
   };
 
   const handleInsertImage = () => {
@@ -471,8 +492,29 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     setLinkText("");
   };
 
+  // Test function to verify handlers work
+  const testDragDrop = () => {
+    console.log('🧪 Testing drag/drop functionality...');
+    console.log('   editorRef.current:', editorRef.current);
+    console.log('   isDragging:', isDragging);
+    console.log('   isImageDialogOpen:', isImageDialogOpen);
+  };
+
   return (
     <div className={className}>
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs p-2 bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 rounded mb-2">
+          <strong>🐛 Debug:</strong> isDragging={String(isDragging)} | dialogOpen={String(isImageDialogOpen)}
+          <button 
+            onClick={testDragDrop}
+            className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+          >
+            Test Handler
+          </button>
+        </div>
+      )}
+      
       {/* Toolbar */}
       <div className="flex flex-wrap gap-1 p-2 border rounded-t-md bg-muted/50">
         <Button
@@ -581,12 +623,20 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       {/* Editor with drag & drop support */}
       <div 
-        ref={editorRef}
+        ref={editorRef} 
         className="relative"
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
+        onDragEnter={(e) => {
+          if (e.dataTransfer?.types.includes('Files')) {
+            console.log('🎯 Wrapper: dragenter with files');
+            setIsDragging(true);
+            e.preventDefault();
+          }
+        }}
+        onDragOver={(e) => {
+          if (e.dataTransfer?.types.includes('Files')) {
+            e.preventDefault(); // Required to allow drop
+          }
+        }}
       >
         <Textarea
           ref={textareaRef}
@@ -596,6 +646,28 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           className={`min-h-[400px] rounded-t-none font-mono text-sm transition-colors ${
             isDragging ? "border-red-500 border-2" : ""
           }`}
+        />
+        
+        {/* Invisible drop zone that sits on top of textarea to catch drops */}
+        <div 
+          className="absolute inset-0 z-[5]"
+          style={{ pointerEvents: isDragging ? 'auto' : 'none' }}
+          onDragEnter={(e) => {
+            console.log('🎯 Drop zone: dragenter');
+            handleDrag(e);
+          }}
+          onDragLeave={(e) => {
+            console.log('🎯 Drop zone: dragleave');
+            handleDrag(e);
+          }}
+          onDragOver={(e) => {
+            console.log('🎯 Drop zone: dragover');
+            handleDrag(e);
+          }}
+          onDrop={(e) => {
+            console.log('🎯 Drop zone: DROP!!!');
+            handleDrop(e);
+          }}
         />
         
         {/* Drag & Drop Overlay */}

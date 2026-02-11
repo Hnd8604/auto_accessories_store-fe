@@ -1,3 +1,4 @@
+import axios from "axios";
 import { CLOUDINARY_CONFIG } from "@/constants/config";
 
 export interface CloudinaryUploadResponse {
@@ -32,10 +33,10 @@ export const CloudinaryApi = {
   ): Promise<CloudinaryUploadResponse> => {
     // Generate timestamp and signature
     const timestamp = Math.round(Date.now() / 1000);
-    
+
     // Create signature string (folder + timestamp)
     const signatureString = `folder=${folder}&timestamp=${timestamp}${CLOUDINARY_CONFIG.apiSecret}`;
-    
+
     // Simple hash function (in production, should use crypto library)
     const signature = await generateSignature(signatureString);
 
@@ -46,20 +47,12 @@ export const CloudinaryApi = {
     formData.append("signature", signature);
     formData.append("api_key", CLOUDINARY_CONFIG.apiKey);
 
-    const response = await fetch(
+    const response = await axios.post<CloudinaryUploadResponse>(
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
-      {
-        method: "POST",
-        body: formData,
-      }
+      formData
     );
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || "Failed to upload image to Cloudinary");
-    }
-
-    return response.json();
+    return response.data;
   },
 
   /**

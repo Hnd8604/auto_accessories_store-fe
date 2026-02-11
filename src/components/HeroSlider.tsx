@@ -1,5 +1,6 @@
 import { useEffect, useState, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import hero1 from "@/assets/hero-interior.jpg";
 import hero2 from "@/assets/seats.jpg";
 import hero3 from "@/assets/steering-wheel.jpg";
@@ -54,6 +55,7 @@ const AUTOPLAY_INTERVAL = 5000;
 
 export const HeroSlider = memo(() => {
   const [api, setApi] = useState<CarouselApi | null>(null);
+  const navigate = useNavigate();
 
   // Fetch banners from API
   const { data: bannersData } = useQuery({
@@ -109,13 +111,13 @@ export const HeroSlider = memo(() => {
                       {s.desc}
                     </p>
                     <div className="mt-8 flex gap-4">
-                      <Button 
-                        variant="hero" 
-                        size="lg" 
+                      <Button
+                        variant="hero"
+                        size="lg"
                         className="hover-scale"
                         onClick={() => {
                           if (s.redirectUrl) {
-                            window.location.href = s.redirectUrl;
+                            navigate(s.redirectUrl);
                           }
                         }}
                       >

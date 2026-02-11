@@ -21,3 +21,9 @@ export interface RefreshResponse {
   accessToken: string;
   authenticated: boolean;
 }
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}

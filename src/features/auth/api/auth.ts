@@ -1,3 +1,4 @@
+import axios from "axios";
 import AuthHttpClient, { simpleHttp } from "@/services/axios";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, API_BASE_URL } from "@/constants/config";
 import { UsersApi } from "@/features/users/api/users";
@@ -8,22 +9,21 @@ import type {
   AuthenticationResponse,
   RefreshRequest,
   RefreshResponse,
+  ChangePasswordRequest,
 } from "@/features/users/types";
 
 export const refreshCall = async (
   refreshToken: string
 ): Promise<{ accessToken: string; refreshToken?: string } | null> => {
   try {
-    const res = await fetch(`http://localhost:8080/api/v1/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken } satisfies RefreshRequest),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as
-      | { code?: number; result?: RefreshResponse }
-      | RefreshResponse;
-    const payload = ("result" in data ? data.result : data) as RefreshResponse;
+    // Dùng axios trực tiếp (không qua AuthHttpClient) để tránh circular dependency
+    const res = await axios.post<{ code?: number; result?: RefreshResponse } | RefreshResponse>(
+      `${API_BASE_URL}/auth/refresh`,
+      { refreshToken } satisfies RefreshRequest,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    const data = res.data;
+    const payload = (data && "result" in data ? data.result : data) as RefreshResponse;
     if (!payload?.accessToken) return null;
     return { accessToken: payload.accessToken };
   } catch {
@@ -39,10 +39,10 @@ export const AuthService = {
     // Use simpleHttp to send session cookie for cart sync
     const data = await simpleHttp.request<
       { result?: AuthenticationResponse } | AuthenticationResponse
-    >("/auth/token", { method: "POST", body: payload });
+    >("/auth/login", { method: "POST", body: payload });
     const response: AuthenticationResponse =
       (data as any).result ?? (data as AuthenticationResponse);
-    
+
     // Step 2: Save tokens to localStorage
     if (typeof window !== "undefined" && response.accessToken) {
       localStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
@@ -52,24 +52,20 @@ export const AuthService = {
     // Step 3: Fetch complete user info with roles from /users/my-info
     try {
       console.log("Fetching user info with roles from /users/my-info...");
-      
-      const myInfoRes = await fetch(`${API_BASE_URL}/users/my-info`, {
+
+      // Dùng axios trực tiếp với access token vừa nhận
+      const myInfoRes = await axios.get(`${API_BASE_URL}/users/my-info`, {
         headers: {
           "Authorization": `Bearer ${response.accessToken}`,
           "Content-Type": "application/json"
         }
       });
 
-      if (!myInfoRes.ok) {
-        console.error(`Failed to fetch user info: ${myInfoRes.status}`);
-        return response;
-      }
-
-      const myInfoData = await myInfoRes.json();
+      const myInfoData = myInfoRes.data;
       const userWithRoles = (myInfoData as any).result ?? (myInfoData as UserResponse);
       console.log("User with roles from my-info:", userWithRoles);
       console.log("Roles:", userWithRoles?.roles);
-      
+
       // Return response with complete user data including roles
       return {
         ...response,
@@ -106,5 +102,12 @@ export const AuthService = {
         localStorage.removeItem(REFRESH_TOKEN_KEY);
       }
     }
+  },
+
+  async changePassword(payload: ChangePasswordRequest) {
+    return http.request("/auth/password/change", {
+      method: "PUT",
+      body: payload,
+    });
   },
 };

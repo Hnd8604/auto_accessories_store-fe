@@ -9,7 +9,7 @@ import type {
   OrderResponse,
   OrderUpdateByAdminRequest,
 } from "@/features/orders/types";
-import type { OrderStatus, PaymentStatus } from "@/features/orders/types";
+import type { OrderStatus, PaymentStatus, PaymentMethod } from "@/features/orders/types";
 
 import {
   Card,
@@ -126,6 +126,27 @@ const getPaymentStatusVariant = (
     REFUNDED: "destructive",
   };
   return status ? variants[status] : "outline";
+};
+
+const getPaymentMethodLabel = (method?: PaymentMethod) => {
+  const labels: Record<PaymentMethod, string> = {
+    COD: "COD",
+    BANK_TRANSFER: "Chuyển khoản",
+  };
+  return method ? labels[method] : "-";
+};
+
+const getPaymentMethodVariant = (
+  method?: PaymentMethod
+): "default" | "secondary" | "destructive" | "outline" => {
+  const variants: Record<
+    PaymentMethod,
+    "default" | "secondary" | "destructive" | "outline"
+  > = {
+    COD: "outline",
+    BANK_TRANSFER: "default",
+  };
+  return method ? variants[method] : "outline";
 };
 
 export const OrderManagement: React.FC<OrderManagementProps> = ({
@@ -287,6 +308,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                   <TableHead>Số điện thoại</TableHead>
                   <TableHead>Địa chỉ</TableHead>
                   <TableHead>Tổng tiền</TableHead>
+                  <TableHead>PTTT</TableHead>
                   <TableHead>Trạng thái đơn</TableHead>
                   <TableHead>Thanh toán</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
@@ -305,6 +327,11 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                     </TableCell>
                     <TableCell className="font-medium">
                       {order.totalPrice.toLocaleString("vi-VN")} ₫
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getPaymentMethodVariant(order.paymentMethod)}>
+                        {getPaymentMethodLabel(order.paymentMethod)}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getOrderStatusVariant(order.status)}>
@@ -489,6 +516,14 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                     Địa chỉ
                   </p>
                   <p className="text-base">{viewingOrder.addressRecipient || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Phương thức thanh toán
+                  </p>
+                  <Badge variant={getPaymentMethodVariant(viewingOrder.paymentMethod)} className="mt-1">
+                    {getPaymentMethodLabel(viewingOrder.paymentMethod)}
+                  </Badge>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
