@@ -4,6 +4,12 @@ export const API_BASE_URL: string =
 export const ACCESS_TOKEN_KEY = "access_token";
 export const REFRESH_TOKEN_KEY = "refresh_token";
 
+// Google OAuth2 Configuration
+export const GOOGLE_CLIENT_ID: string =
+  (import.meta as any)?.env?.VITE_GOOGLE_CLIENT_ID || "990160635393-f6kevb8bg75jpi62lj429sjum10so4fq.apps.googleusercontent.com";
+export const GOOGLE_REDIRECT_URI: string =
+  (import.meta as any)?.env?.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/auth/google/callback`;
+
 // Cloudinary Configuration
 // Note: These should be moved to environment variables in production
 export const CLOUDINARY_CONFIG = {

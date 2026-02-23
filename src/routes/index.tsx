@@ -10,6 +10,7 @@ import NotFound from "@/pages/NotFound";
 
 // Feature Pages
 import AuthPage from "@/features/auth/pages/AuthPage";
+import GoogleCallback from "@/features/auth/pages/GoogleCallback";
 import ProductsPage from "@/features/products/pages/ProductsPage";
 import ProductDetailPage from "@/features/products/pages/ProductDetailPage";
 import OrderPage from "@/features/orders/pages/OrderPage";
@@ -27,6 +28,7 @@ export const AppRoutes = () => {
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<PostDetailPage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/auth/google/callback" element={<GoogleCallback />} />
       <Route
         path="/admin"
         element={

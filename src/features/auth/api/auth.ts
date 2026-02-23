@@ -110,4 +110,35 @@ export const AuthService = {
       body: payload,
     });
   },
+
+  async googleLogin(code: string) {
+    // Step 1: Send authorization code to backend
+    const data = await simpleHttp.request<
+      { result?: AuthenticationResponse } | AuthenticationResponse
+    >("/auth/google", { method: "POST", body: { code } });
+    const response: AuthenticationResponse =
+      (data as any).result ?? (data as AuthenticationResponse);
+
+    // Step 2: Save tokens
+    if (typeof window !== "undefined" && response.accessToken) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken || "");
+    }
+
+    // Step 3: Fetch complete user info with roles
+    try {
+      const myInfoRes = await axios.get(`${API_BASE_URL}/users/my-info`, {
+        headers: {
+          Authorization: `Bearer ${response.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const myInfoData = myInfoRes.data;
+      const userWithRoles = (myInfoData as any).result ?? myInfoData;
+      return { ...response, user: userWithRoles };
+    } catch (error) {
+      console.error("Failed to fetch user roles after Google login:", error);
+      return response;
+    }
+  },
 };
