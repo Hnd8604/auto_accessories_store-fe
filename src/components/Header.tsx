@@ -18,6 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SearchBar } from "@/components/SearchBar";
 import { ChangePasswordDialog } from "@/features/auth/components/ChangePasswordDialog";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 
 import { memo, useCallback, useState, useEffect } from "react";
 
@@ -221,6 +222,9 @@ export const Header = memo(() => {
                   <User className="h-5 w-5 text-primary" />
                 </a>
               )}
+
+              {/* Notification Bell - chỉ hiện khi đăng nhập */}
+              {isAuthenticated && <NotificationBell />}
 
               <CartButton />
               <Button variant="luxury" size="sm" className="hidden lg:inline-flex">

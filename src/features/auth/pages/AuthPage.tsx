@@ -34,9 +34,10 @@ import { isAdmin } from "@/features/auth/hooks/useAuth";
 import { useAuth } from "@/context/auth-context";
 
 const loginSchema = z.object({
-  username: z
+  email: z
     .string()
-    .min(1, { message: "Tên đăng nhập không được để trống." }),
+    .min(1, { message: "Email không được để trống." })
+    .email({ message: "Email không hợp lệ." }),
   password: z.string().min(1, { message: "Mật khẩu không được để trống." }),
 });
 
@@ -70,7 +71,7 @@ const AuthPage = () => {
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -142,7 +143,7 @@ const AuthPage = () => {
 
   function onLoginSubmit(values: z.infer<typeof loginSchema>) {
     const payload = {
-      username: values.username,
+      email: values.email,
       password: values.password,
     };
     loginMutation.mutate(payload);
@@ -194,13 +195,13 @@ const AuthPage = () => {
                     <CardContent className="space-y-4">
                       <FormField
                         control={loginForm.control}
-                        name="username"
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Tên đăng nhập</FormLabel>
+                            <FormLabel>Email</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="Nhập tên đăng nhập"
+                                placeholder="Nhập email"
                                 {...field}
                               />
                             </FormControl>

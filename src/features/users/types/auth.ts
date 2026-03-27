@@ -2,7 +2,7 @@ import type { UserResponse } from './user';
 
 // Authentication Types
 export interface AuthenticationRequest {
-  username: string;
+  email: string;
   password: string;
 }
 
