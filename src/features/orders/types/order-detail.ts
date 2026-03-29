@@ -3,7 +3,9 @@ export interface OrderDetailResponse {
   id: string;
   orderId: string;
   productId: string;
-  unitPrice: number;
+  productName?: string;
+  unitPrice?: number;
+  productImage?: string;
   quantity: number;
 }
 

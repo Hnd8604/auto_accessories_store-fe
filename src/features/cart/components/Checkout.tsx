@@ -128,7 +128,7 @@ export const Checkout = ({ isOpen, onClose, onComplete }: CheckoutProps) => {
     }
   }, [cartItems]);
   const totalPrice = cart?.totalPrice || 0;
-  const shippingFee = totalPrice >= 20000000 ? 0 : 500000;
+  const shippingFee = totalPrice >= 20000000 ? 0 : 30000;
   const finalTotal = totalPrice + shippingFee;
 
   const onSubmit = async (data: CheckoutFormData) => {

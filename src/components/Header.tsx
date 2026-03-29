@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Car, Phone, Mail, Menu, User, LogOut, Settings, ShoppingCart, KeyRound } from "lucide-react";
+import { Car, Phone, Mail, Menu, User, LogOut, Settings, ShoppingCart, KeyRound, ClipboardList } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useCart } from "@/context/cart-context";
 import { isAdmin } from "@/features/auth/hooks/useAuth";
@@ -205,6 +205,10 @@ export const Header = memo(() => {
                     <DropdownMenuItem onClick={() => setOpenChangePassword(true)}>
                       <KeyRound className="mr-2 h-4 w-4" />
                       <span>Đổi mật khẩu</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/my-orders")}>
+                      <ClipboardList className="mr-2 h-4 w-4" />
+                      <span>Đơn hàng của tôi</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>

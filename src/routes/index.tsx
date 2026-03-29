@@ -14,6 +14,7 @@ import GoogleCallback from "@/features/auth/pages/GoogleCallback";
 import ProductsPage from "@/features/products/pages/ProductsPage";
 import ProductDetailPage from "@/features/products/pages/ProductDetailPage";
 import OrderPage from "@/features/orders/pages/OrderPage";
+import MyOrdersPage from "@/features/orders/pages/MyOrdersPage";
 import PostDetailPage from "@/features/posts/pages/PostDetailPage";
 import PostEditorPage from "@/features/posts/pages/PostEditorPage";
 
@@ -25,6 +26,14 @@ export const AppRoutes = () => {
       <Route path="/products/:slug" element={<ProductDetailPage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/order" element={<OrderPage />} />
+      <Route
+        path="/my-orders"
+        element={
+          <ProtectedRoute requireAuth>
+            <MyOrdersPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<PostDetailPage />} />
       <Route path="/auth" element={<AuthPage />} />

@@ -14,6 +14,7 @@ export interface OrderResponse {
   status?: OrderStatus;
   paymentMethod?: PaymentMethod;
   paymentStatus?: PaymentStatus;
+  createdAt?: string;
   orderDetails?: OrderDetailResponse[];
 }
 

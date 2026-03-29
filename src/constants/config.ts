@@ -6,16 +6,16 @@ export const REFRESH_TOKEN_KEY = "refresh_token";
 
 // Google OAuth2 Configuration
 export const GOOGLE_CLIENT_ID: string =
-  (import.meta as any)?.env?.VITE_GOOGLE_CLIENT_ID || "990160635393-f6kevb8bg75jpi62lj429sjum10so4fq.apps.googleusercontent.com";
+  (import.meta as any)?.env?.VITE_GOOGLE_CLIENT_ID || "990160635393-5s2c8e26gt5m459ib69su6l1a5r52vca.apps.googleusercontent.com";
 export const GOOGLE_REDIRECT_URI: string =
-  (import.meta as any)?.env?.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/auth/google/callback`;
+  (import.meta as any)?.env?.VITE_GOOGLE_REDIRECT_URI || "http://localhost:3000/auth/google/callback";
 
 // Cloudinary Configuration
 // Note: These should be moved to environment variables in production
 export const CLOUDINARY_CONFIG = {
   cloudName: "dsgftzhzt",
-  apiKey: "363524259282383",
-  apiSecret: "Fgg6RVnlQNtIe1cfAgg5sKORENw",
+  apiKey: "991924558367536",
+  apiSecret: "HR2QU9_z_Bzvk4lxaoAR_U69dTQ",
   uploadPreset: "ml_default", // You need to create an unsigned upload preset in Cloudinary dashboard
   // Alternative: use signed upload via backend API for better security
 };
